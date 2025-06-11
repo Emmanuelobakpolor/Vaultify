@@ -41,7 +41,7 @@ class AccessCodeSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ['phone_number', 'role', 'estate', 'estate_email', 'pin', 'plan', 'wallet_balance']
+        fields = ['phone_number', 'role', 'estate', 'estate_email', 'house_address', 'pin', 'plan', 'wallet_balance']
 
     def validate_role(self, value):
         """

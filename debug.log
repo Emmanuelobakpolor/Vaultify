@@ -5166,3 +5166,11 @@ Watching for file changes with StatReloader
 Forbidden: /api/alerts/
 User emmanuelosaro510@gmail.com deleted alert 5 via DELETE
 Method Not Allowed: /api/alerts/
+Watching for file changes with StatReloader
+Received signup data: {'email': 'user@example.com', 'password': 'YourPassword123!', 'first_name': 'John', 'last_name': 'Doe', 'profile': {'role': 'Residence', 'phone_number': '1234567890', 'house_address': '123 Main St, City, Country', 'estate': 'Estate Name', 'estate_email': 'estate@example.com', 'pin': 'hashed_pin_value', 'plan': 'Plan Name'}}
+Creating user with profile data: {'phone_number': '1234567890', 'role': 'Residence', 'estate': 'Estate Name', 'estate_email': 'estate@example.com', 'house_address': '123 Main St, City, Country', 'pin': 'hashed_pin_value', 'plan': 'Plan Name'}
+Existing UserProfile updated with role: Residence
+UserProfile phone_number after save: 1234567890
+UserProfile phone_number after refresh: 1234567890
+Verification email sent to user@example.com
+User created: {'id': 19, 'email': 'user@example.com', 'first_name': 'John', 'last_name': 'Doe', 'profile': {'phone_number': '1234567890', 'role': 'Residence', 'estate': 'Estate Name', 'estate_email': 'estate@example.com', 'house_address': '123 Main St, City, Country', 'pin': 'hashed_pin_value', 'plan': 'Plan Name', 'wallet_balance': '0.00'}, 'wallet_balance': '0.00'}, Role: Residence, Phone: 1234567890

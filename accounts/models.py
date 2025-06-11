@@ -12,6 +12,7 @@ class UserProfile(models.Model):
     role = models.CharField(max_length=100, blank=True, null=True)
     estate = models.CharField(max_length=100, blank=True, null=True)
     estate_email = models.EmailField(blank=True, null=True)
+    house_address = models.CharField(max_length=255, blank=True, null=True)
     pin = models.CharField(max_length=128, blank=True, null=True)  # Hashed PIN
     plan = models.CharField(max_length=50, blank=True, null=True)
     wallet_balance = models.DecimalField(
