@@ -563,28 +563,13 @@ class AlertListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        try:
-            user_role = user.profile.role
-        except Exception:
-            user_role = None
-        if not user_role:
+        user_id_str = str(user.id)
+        if not user_id_str:
             return Alert.objects.none()
 
-        # Define opposite role mapping for cross-role alert fetching
-        opposite_role_map = {
-            'Residence': 'Security Personnel',
-            'Security Personnel': 'Residence',
-        }
-
-        opposite_role = opposite_role_map.get(user_role)
-
-        # Filter alerts where recipients contain user_role and sender's role is opposite_role
-        # or alerts sent by the user themselves (optional)
         deleted_alert_ids = user.deleted_alerts.values_list('alert_id', flat=True)
         return Alert.objects.filter(
-            recipients__contains=[user_role]
-        ).filter(
-            models.Q(sender__profile__role=opposite_role) | models.Q(sender=user)
+            recipients__contains=[user_id_str]
         ).exclude(
             id__in=deleted_alert_ids
         ).order_by('-timestamp')
