@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    SignupView, LoginView, LoginWithIdView, UserUpdateView, VerifyEmailView,
+    AlertCountView, LostFoundCountView, SignupView, LoginView, LoginWithIdView, UserUpdateView, VerifyEmailView,
     ResendVerificationEmailView, GoogleSignInView, PasswordResetRequestView,
     PasswordResetConfirmView, DeleteAccountView, LogoutView, CheckEmailVerificationView,
     AccessCodeCreateView, AccessCodeVerifyView, AccessCodeByUserListView,
@@ -27,6 +27,11 @@ urlpatterns = [
     path('delete-account/<int:pk>/', DeleteAccountView.as_view(), name='delete-account'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('check-email-verification/', CheckEmailVerificationView.as_view(), name='check-email-verification'),
+    # Deprecated combined counts endpoint
+    path('counts/', LostFoundAndAlertCountView.as_view(), name='lostfound-alerts-count'),
+    # New separate counts endpoints
+    path('alerts/count/', AlertCountView.as_view(), name='alert-count'),
+    path('lostfound/count/', LostFoundCountView.as_view(), name='lostfound-count'),
 
     # Access Codes
     path('access-code/create/', AccessCodeCreateView.as_view(), name='access-code-create'),

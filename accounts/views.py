@@ -385,22 +385,39 @@ class LostFoundAndAlertCountView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        # Deprecated combined counts endpoint
+        return Response({'detail': 'Use separate endpoints for alerts and lostfound counts'}, status=status.HTTP_400_BAD_REQUEST)
+
+class AlertCountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
         user = request.user
-        # Count alerts for the user (excluding deleted alerts)
         deleted_alert_ids = user.deleted_alerts.values_list('alert_id', flat=True)
+        user_role = None
+        try:
+            user_role = user.profile.role
+        except Exception as e:
+            # Log error if user profile or role is missing
+            logger.error(f"Error getting user role for alert count: {e}")
+        if not user_role:
+            return Response({'alerts_count': 0}, status=status.HTTP_200_OK)
         alerts_count = Alert.objects.filter(
-            recipients__contains=[str(user.id)]
+            recipients__contains=[user_role]
         ).exclude(
             id__in=deleted_alert_ids
         ).count()
+        logger.debug(f"User {user.username} with role {user_role} has {alerts_count} alerts")
+        return Response({'alerts_count': alerts_count}, status=status.HTTP_200_OK)
 
-        # Count lost and found items reported by the user
+class LostFoundCountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
         lostfound_count = LostFoundItem.objects.filter(sender=user).count()
-
-        return Response({
-            'alerts_count': alerts_count,
-            'lostfound_count': lostfound_count
-        }, status=status.HTTP_200_OK)
+        logger.debug(f"User {user.username} has {lostfound_count} lost and found items")
+        return Response({'lostfound_count': lostfound_count}, status=status.HTTP_200_OK)
 
 class AlertDeleteView(APIView):
     permission_classes = [IsAuthenticated]
