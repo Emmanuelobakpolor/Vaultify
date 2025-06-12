@@ -10,6 +10,7 @@ from .views import (
     ResidenceUsersListView, SecurityPersonnelUsersListView,
     ResidenceUsersCountView, SecurityPersonnelUsersCountView,
     AlertDeleteView,
+    LostFoundAndAlertCountView,
 )
 
 urlpatterns = [
@@ -55,4 +56,5 @@ urlpatterns = [
     path('security-personnel-users/', SecurityPersonnelUsersListView.as_view(), name='security-personnel-users-list'),
     path('residence-users/count/', ResidenceUsersCountView.as_view(), name='residence-users-count'),
     path('security-personnel-users/count/', SecurityPersonnelUsersCountView.as_view(), name='security-personnel-users-count'),
+    path('counts/', LostFoundAndAlertCountView.as_view(), name='lostfound-alerts-count'),
 ]

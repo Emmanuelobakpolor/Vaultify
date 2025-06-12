@@ -381,6 +381,27 @@ from rest_framework.permissions import IsAuthenticated
 WAT = pytz.timezone('Africa/Lagos')
 logger = logging.getLogger(__name__)
 
+class LostFoundAndAlertCountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # Count alerts for the user (excluding deleted alerts)
+        deleted_alert_ids = user.deleted_alerts.values_list('alert_id', flat=True)
+        alerts_count = Alert.objects.filter(
+            recipients__contains=[str(user.id)]
+        ).exclude(
+            id__in=deleted_alert_ids
+        ).count()
+
+        # Count lost and found items reported by the user
+        lostfound_count = LostFoundItem.objects.filter(sender=user).count()
+
+        return Response({
+            'alerts_count': alerts_count,
+            'lostfound_count': lostfound_count
+        }, status=status.HTTP_200_OK)
+
 class AlertDeleteView(APIView):
     permission_classes = [IsAuthenticated]
 
