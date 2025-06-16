@@ -1,7 +1,7 @@
 import uuid
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Alert, UserProfile, AccessCode, LostFoundItem
+from .models import Alert, PrivateMessage, UserProfile, AccessCode, LostFoundItem
 from django.contrib.auth.hashers import make_password
 import logging
 
@@ -213,3 +213,12 @@ class LostFoundItemSerializer(serializers.ModelSerializer):
         if value not in valid_types:
             raise serializers.ValidationError("Invalid item type")
         return value
+
+class PrivateMessageSerializer(serializers.ModelSerializer):
+    sender = serializers.StringRelatedField(read_only=True)
+    receiver = serializers.StringRelatedField()
+
+    class Meta:
+        model = PrivateMessage
+        fields = ['id', 'sender', 'receiver', 'message', 'timestamp']
+        read_only_fields = ['id', 'sender', 'timestamp']

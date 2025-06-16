@@ -674,6 +674,34 @@ class ResidenceUsersListView(generics.ListAPIView):
     def get_queryset(self):
         return User.objects.filter(profile__role='Residence', profile__is_email_verified=True)
 
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from .models import PrivateMessage
+from .serializers import PrivateMessageSerializer
+from rest_framework.response import Response
+from rest_framework import status
+from django.db.models import Q
+
+class PrivateMessageListView(generics.ListAPIView):
+    serializer_class = PrivateMessageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        other_user_id = self.request.query_params.get('user_id')
+        if not other_user_id:
+            return PrivateMessage.objects.none()
+        return PrivateMessage.objects.filter(
+            Q(sender=user, receiver_id=other_user_id) | Q(sender_id=other_user_id, receiver=user)
+        ).order_by('timestamp')
+
+class PrivateMessageCreateView(generics.CreateAPIView):
+    serializer_class = PrivateMessageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)
+
 class SecurityPersonnelUsersListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
