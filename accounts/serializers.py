@@ -216,7 +216,7 @@ class LostFoundItemSerializer(serializers.ModelSerializer):
 
 class PrivateMessageSerializer(serializers.ModelSerializer):
     sender = serializers.StringRelatedField(read_only=True)
-    receiver = serializers.StringRelatedField(read_only=True)
+    receiver = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
         model = PrivateMessage
