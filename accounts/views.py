@@ -702,7 +702,10 @@ class PrivateMessageCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(sender=self.request.user)
+        receiver = serializer.validated_data.get('receiver')
+        if receiver is None:
+            raise serializers.ValidationError({"receiver": "This field is required."})
+        serializer.save(sender=self.request.user, receiver=receiver)
 
 class SecurityPersonnelUsersListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
