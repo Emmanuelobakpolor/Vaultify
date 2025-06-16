@@ -672,6 +672,8 @@ class ResidenceUsersListView(generics.ListAPIView):
     serializer_class = UserSerializer
 
     def get_queryset(self):
+        user = self.request.user
+        logger.info(f"ResidenceUsersListView accessed by user: {user.email}, is_authenticated: {user.is_authenticated}")
         return User.objects.filter(profile__role='Residence', profile__is_email_verified=True)
 
 from rest_framework import generics
