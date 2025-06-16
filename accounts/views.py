@@ -11,6 +11,7 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from rest_framework.authtoken.models import Token as AuthToken
 from django.contrib.auth import authenticate
+from rest_framework import serializers
 from .serializers import AlertSerializer, UserSerializer, LostFoundItemSerializer
 from .models import Alert, UserProfile, LostFoundItem
 from google.oauth2 import id_token
