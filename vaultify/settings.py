@@ -60,7 +60,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 ]
 
-ALLOWED_HOSTS = ['vaultify.lexisdevelopmentltd.com', 'vaultify.lexisfinance.com', 'vaultify-43wm.onrender.com', '88.223.94.10', 'yourdomain.com', 'localhost', '127.0.0.1'] 
+ALLOWED_HOSTS = ['vaultify.lexisdevelopmentltd.com', 'vaultify.lexisfinance.com', 'vaultify-43wm.onrender.com', '88.223.94.10', 'yourdomain.com', 'localhost', '127.0.0.1', 'vaultify-omega.vercel.app'] 
 # or specify your IP
 CORS_ALLOW_ALL_ORIGINS = True  # only for development
 
