@@ -106,6 +106,7 @@ class PrivateMessage(models.Model):
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    seen = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['timestamp']
