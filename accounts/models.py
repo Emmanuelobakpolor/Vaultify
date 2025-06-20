@@ -56,6 +56,7 @@ class Alert(models.Model):
         ('Visitor Arrival', 'Visitor Arrival'),
         ('Fire Alarm', 'Fire Alarm'),
         ('Security Breach', 'Security Breach'),
+        ('others', 'others'),
     ]
     URGENCY_LEVELS = [
         ('Low', 'Low'),
