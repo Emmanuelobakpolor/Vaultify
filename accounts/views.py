@@ -602,14 +602,29 @@ class AlertListView(generics.ListAPIView):
     search_fields = ['alert_type', 'urgency_level', 'recipients']
 
     def get_queryset(self):
+        from django.db.models import Q
+
         user = self.request.user
         user_id_str = str(user.id)
-        if not user_id_str:
+        try:
+            user_role = user.profile.role
+        except Exception:
+            user_role = None
+
+        if not user_id_str or not user_role:
             return Alert.objects.none()
 
         deleted_alert_ids = user.deleted_alerts.values_list('alert_id', flat=True)
+
+        if user_role.lower() == 'security personnel':
+            # Return all alerts except those deleted by the user
+            return Alert.objects.exclude(
+                id__in=deleted_alert_ids
+            ).order_by('-timestamp')
+
+        # For other roles, filter alerts where recipients contain user ID or user role
         return Alert.objects.filter(
-            recipients__contains=[user_id_str]
+            Q(recipients__contains=[user_id_str]) | Q(recipients__contains=[user_role])
         ).exclude(
             id__in=deleted_alert_ids
         ).order_by('-timestamp')
