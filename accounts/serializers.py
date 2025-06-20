@@ -57,7 +57,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer()
-    wallet_balance = serializers.DecimalField(max_digits=10, decimal_places=2, source='profile.wallet_balance', read_only=True)
+    wallet_balance = serializers.DecimalField(max_digits=10, decimal_places=2, source='profile.wallet_balance')
     password = serializers.CharField(write_only=True)
 
     class Meta:
@@ -191,22 +191,20 @@ from django.contrib.auth.models import User
 from .models import Alert, UserProfile, AccessCode, LostFoundItem
 from django.contrib.auth.hashers import make_password
 import logging
-
+import logging
 logger = logging.getLogger(__name__)
 
-class LostFoundItemSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
+from rest_framework import serializers
+from .models import LostFoundItem
 
+class LostFoundItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = LostFoundItem
         fields = ['id', 'description', 'item_type', 'location', 'date_reported', 'contact_info', 'sender', 'image']
         read_only_fields = ['date_reported', 'sender']
-
-    def get_image(self, obj):
-        request = self.context.get('request')
-        if obj.image and hasattr(obj.image, 'url'):
-            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
-        return None
+        extra_kwargs = {
+            'image': {'required': False}  # Optional field
+        }
 
     def validate_item_type(self, value):
         valid_types = [choice[0] for choice in LostFoundItem.ITEM_TYPES]
@@ -214,6 +212,21 @@ class LostFoundItemSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid item type")
         return value
 
+    def create(self, validated_data):
+        request = self.context.get('request')
+        image = request.FILES.get('image') if request and request.FILES else None
+        instance = LostFoundItem.objects.create(**validated_data)
+        if image:
+            instance.image = image
+            instance.save()
+        return instance
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        request = self.context.get('request')
+        if instance.image and hasattr(instance.image, 'url'):
+            representation['image'] = request.build_absolute_uri(instance.image.url) if request else instance.image.url
+        return representation
 class PrivateMessageSerializer(serializers.ModelSerializer):
     sender = serializers.StringRelatedField(read_only=True)
     receiver = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())

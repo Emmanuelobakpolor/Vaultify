@@ -5185,3 +5185,6 @@ C:\Users\sxc\Downloads\Vaultify-master2\Vaultify-master\vaultify\accounts\views.
 Watching for file changes with StatReloader
 Not Found: /api/lostfound/count/ 
 Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Forbidden: /api/lostfound/create/
+Bad Request: /api/lostfound/create/
