@@ -38,6 +38,8 @@ import hmac
 from rest_framework.decorators import api_view
 from decimal import Decimal
 
+from rest_framework.parsers import FormParser
+
 class PlainTextParser(BaseParser):
     """
     Plain text parser for 'text/plain' content type.
@@ -45,6 +47,17 @@ class PlainTextParser(BaseParser):
     media_type = 'text/plain'
 
     def parse(self, stream, media_type=None, parser_context=None):
+        return stream.read().decode('utf-8')
+
+class PlainTextOrFormParser(FormParser):
+    """
+    Parser to accept both 'text/plain' and 'application/x-www-form-urlencoded' content types.
+    """
+    media_type = 'text/plain'
+
+    def parse(self, stream, media_type=None, parser_context=None):
+        if media_type == 'application/x-www-form-urlencoded':
+            return super().parse(stream, media_type, parser_context)
         return stream.read().decode('utf-8')
 
 PAYSTACK_SECRET_KEY = 'sk_live_43fc893ff9d7a6dd07302e43aae78602c0dc62c8'  # Replace with your Paystack secret key
@@ -307,7 +320,7 @@ class PasswordResetRequestView(APIView):
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
 class PasswordResetConfirmView(APIView):
-    parser_classes = [PlainTextParser, JSONParser]
+    parser_classes = [PlainTextOrFormParser, PlainTextParser, JSONParser]
     renderer_classes = [BrowsableAPIRenderer, JSONRenderer]
 
     def post(self, request, uidb64, token):
@@ -317,9 +330,9 @@ class PasswordResetConfirmView(APIView):
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             user = None
         if user and default_token_generator.check_token(user, token):
-            if request.content_type == 'text/plain':
-                # For plain text, the raw body is the new password
-                new_password = request.data
+            if request.content_type in ['text/plain', 'application/x-www-form-urlencoded']:
+                # For plain text or form data, the raw body or form data is the new password
+                new_password = request.data if isinstance(request.data, str) else request.data.get('new_password')
             else:
                 new_password = request.data.get('new_password')
             if not new_password:
