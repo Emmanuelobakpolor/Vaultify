@@ -20,9 +20,14 @@ from django.urls import path, include
 from django.conf.urls.static import static
 from django.http import HttpResponse
 
+from django.views.generic import TemplateView
+
 urlpatterns = [
     path('', lambda request: HttpResponse("Vaultify is alive!")),
     path('admin/', admin.site.urls),
     path('api/', include('accounts.urls')),
+
+    # Serve Flutter app for password reset confirm route
+    path('reset-password-confirm/<str:uidb64>/<str:token>/', TemplateView.as_view(template_name='index.html')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
