@@ -882,3 +882,15 @@ class PrivateMessageMarkSeenView(APIView):
         )
         updated_count = messages.update(seen=True)
         return Response({'marked_seen_count': updated_count}, status=status.HTTP_200_OK)
+
+
+from django.http import FileResponse
+from pathlib import Path
+from django.conf import settings
+
+def serve_flutter_index(request, *args, **kwargs):
+    """
+    Serve the Flutter web app's index.html file.
+    """
+    index_path = Path(settings.BASE_DIR) / 'web' / 'index.html'
+    return FileResponse(open(index_path, 'rb'), content_type='text/html')
