@@ -306,7 +306,8 @@ class PasswordResetRequestView(APIView):
             user = User.objects.get(email=email)
             token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
-            reset_link = f"{get_base_url()}/api/password-reset/confirm/{uid}/{token}/"
+            # Update reset link to point to frontend HTML form page
+            reset_link = f"{get_base_url()}/reset_password_confirm.html/{uid}/{token}/"
             send_mail(
                 'Password Reset Request',
                 f'Click the link to reset your password: {reset_link}',
