@@ -1,5 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.parsers import BaseParser, JSONParser
+from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
 import uuid
 from rest_framework import filters
 from django.db import IntegrityError
@@ -35,6 +37,15 @@ import hashlib
 import hmac
 from rest_framework.decorators import api_view
 from decimal import Decimal
+
+class PlainTextParser(BaseParser):
+    """
+    Plain text parser for 'text/plain' content type.
+    """
+    media_type = 'text/plain'
+
+    def parse(self, stream, media_type=None, parser_context=None):
+        return stream.read().decode('utf-8')
 
 PAYSTACK_SECRET_KEY = 'sk_live_43fc893ff9d7a6dd07302e43aae78602c0dc62c8'  # Replace with your Paystack secret key
 
@@ -296,6 +307,9 @@ class PasswordResetRequestView(APIView):
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
 class PasswordResetConfirmView(APIView):
+    parser_classes = [PlainTextParser, JSONParser]
+    renderer_classes = [BrowsableAPIRenderer, JSONRenderer]
+
     def post(self, request, uidb64, token):
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
@@ -303,7 +317,11 @@ class PasswordResetConfirmView(APIView):
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             user = None
         if user and default_token_generator.check_token(user, token):
-            new_password = request.data.get('new_password')
+            if request.content_type == 'text/plain':
+                # For plain text, the raw body is the new password
+                new_password = request.data
+            else:
+                new_password = request.data.get('new_password')
             if not new_password:
                 return Response({'error': 'New password is required'}, status=status.HTTP_400_BAD_REQUEST)
             user.set_password(new_password)
