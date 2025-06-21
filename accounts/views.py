@@ -295,11 +295,7 @@ class PasswordResetRequestView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-from rest_framework.parsers import JSONParser, FormParser, MultiPartParser
-
 class PasswordResetConfirmView(APIView):
-    parser_classes = [JSONParser, FormParser, MultiPartParser]
-
     def post(self, request, uidb64, token):
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
@@ -315,7 +311,6 @@ class PasswordResetConfirmView(APIView):
             logger.info(f"Password reset successful for {user.email}")
             return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class DeleteAccountView(APIView):
     permission_classes = [IsAuthenticated]
