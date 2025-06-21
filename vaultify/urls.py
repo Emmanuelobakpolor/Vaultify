@@ -21,7 +21,6 @@ from django.conf.urls.static import static
 from django.http import HttpResponse
 
 from django.views.generic import TemplateView
-from accounts.views import serve_flutter_index
 
 urlpatterns = [
     path('', lambda request: HttpResponse("Vaultify is alive!")),
@@ -29,6 +28,5 @@ urlpatterns = [
     path('api/', include('accounts.urls')),
 
     # Serve Flutter app for password reset confirm route
-    path('reset-password-confirm/<str:uidb64>/<str:token>/', serve_flutter_index),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
 
