@@ -302,21 +302,14 @@ class PasswordResetConfirmView(APIView):
             user = User.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             user = None
-
         if user and default_token_generator.check_token(user, token):
-            # Accept both JSON and plain text
-            if request.content_type == 'text/plain':
-                new_password = request.body.decode('utf-8').strip()
-            else:
-                new_password = request.data.get('new_password')
-
+            new_password = request.data.get('new_password')
             if not new_password:
                 return Response({'error': 'New password is required'}, status=status.HTTP_400_BAD_REQUEST)
-
             user.set_password(new_password)
             user.save()
+            logger.info(f"Password reset successful for {user.email}")
             return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
-
         return Response({'error': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
 
 class DeleteAccountView(APIView):
