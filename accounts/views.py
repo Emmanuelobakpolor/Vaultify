@@ -384,7 +384,6 @@ class PasswordResetConfirmView(APIView):
             logger.info(f"Password reset successful for {user.email}")
             return Response('<html><body><h2>Password reset successfully!</h2></body></html>', content_type='text/html')
         return Response('<html><body><h2 class="error">Invalid or expired token</h2></body></html>', content_type='text/html')
-
 class DeleteAccountView(APIView):
     permission_classes = [IsAuthenticated]
     
