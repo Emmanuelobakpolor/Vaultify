@@ -295,7 +295,11 @@ class PasswordResetRequestView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
+from rest_framework.parsers import JSONParser, FormParser, MultiPartParser
+
 class PasswordResetConfirmView(APIView):
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
+
     def post(self, request, uidb64, token):
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
