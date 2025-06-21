@@ -277,6 +277,15 @@ class GoogleSignInView(APIView):
 
 
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_decode, force_str
+from django.core.mail import send_mail
+from django.conf import settings
+import logging
+
 logger = logging.getLogger(__name__)
 
 class PasswordResetRequestView(APIView):
@@ -330,7 +339,7 @@ class PasswordResetConfirmView(APIView):
                         margin-bottom: 5px;
                         color: #555;
                     }
-                    input[type="text"] {
+                    input[type="password"] {
                         width: 100%;
                         padding: 8px;
                         border: 1px solid #ddd;
@@ -357,15 +366,18 @@ class PasswordResetConfirmView(APIView):
             <body>
                 <h2>Reset Your Password</h2>
                 <form method="post" action="">
+                    <input type="hidden" name="uidb64" value="{uidb64}">
+                    <input type="hidden" name="token" value="{token}">
                     <div class="form-group">
                         <label for="new_password">New Password:</label>
-                        <input type="text" id="new_password" name="new_password" required>
+                        <input type="password" id="new_password" name="new_password" required>
                     </div>
                     <input type="submit" value="Submit">
                 </form>
+                {error}
             </body>
             </html>
-            """
+            """.format(uidb64=uidb64, token=token, error='')
             return Response(html_form, content_type='text/html')
         return Response('<html><body><h2 class="error">Invalid or expired link</h2></body></html>', content_type='text/html')
 
@@ -378,25 +390,87 @@ class PasswordResetConfirmView(APIView):
         if user and default_token_generator.check_token(user, token):
             new_password = request.POST.get('new_password')
             if not new_password:
-                return Response({'error': 'New password is required'}, status=status.HTTP_400_BAD_REQUEST)
+                html_form = """
+                <html>
+                <head>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            max-width: 400px;
+                            margin: 50px auto;
+                            padding: 20px;
+                            background-color: #f9f9f9;
+                        }
+                        h2 {
+                            text-align: center;
+                            color: #333;
+                        }
+                        .form-group {
+                            margin-bottom: 15px;
+                        }
+                        label {
+                            display: block;
+                            margin-bottom: 5px;
+                            color: #555;
+                        }
+                        input[type="password"] {
+                            width: 100%;
+                            padding: 8px;
+                            border: 1px solid #ddd;
+                            border-radius: 4px;
+                        }
+                        input[type="submit"] {
+                            width: 100%;
+                            padding: 10px;
+                            background-color: #007bff;
+                            color: white;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                        }
+                        input[type="submit"]:hover {
+                            background-color: #0056b3;
+                        }
+                        .error {
+                            color: red;
+                            text-align: center;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h2>Reset Your Password</h2>
+                    <form method="post" action="">
+                        <input type="hidden" name="uidb64" value="{uidb64}">
+                        <input type="hidden" name="token" value="{token}">
+                        <div class="form-group">
+                            <label for="new_password">New Password:</label>
+                            <input type="password" id="new_password" name="new_password" required>
+                        </div>
+                        <input type="submit" value="Submit">
+                    </form>
+                    <p class="error">New password is required</p>
+                </body>
+                </html>
+                """.format(uidb64=uidb64, token=token)
+                return Response(html_form, content_type='text/html')
             user.set_password(new_password)
             user.save()
             logger.info(f"Password reset successful for {user.email}")
             return Response('<html><body><h2>Password reset successfully!</h2></body></html>', content_type='text/html')
-        return Response('<html><body><h2 class="error">Invalid or expired token</h2></body></html>', content_type='text/html')
-class DeleteAccountView(APIView):
-    permission_classes = [IsAuthenticated]
     
-    def delete(self, request, pk):
-        if request.user.pk != pk:
-            return Response({'error': 'You can only delete your own account'}, status=status.HTTP_403_FORBIDDEN)
-        try:
-            user = User.objects.get(pk=pk)
-            user.delete()
-            logger.info(f"Account deleted for {user.email}")
-            return Response({'message': 'Account deleted successfully'}, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    class DeleteAccountView(APIView):
+        permission_classes = [IsAuthenticated]
+        
+        def delete(self, request, pk):
+            if request.user.pk != pk:
+                return Response({'error': 'You can only delete your own account'}, status=status.HTTP_403_FORBIDDEN)
+            try:
+                user = User.objects.get(pk=pk)
+                user.delete()
+                logger.info(f"Account deleted for {user.email}")
+                return Response({'message': 'Account deleted successfully'}, status=status.HTTP_200_OK)
+            except User.DoesNotExist:
+                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
