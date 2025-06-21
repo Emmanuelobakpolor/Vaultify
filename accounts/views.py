@@ -275,6 +275,17 @@ class GoogleSignInView(APIView):
         except ValueError:
             return Response({'error': 'Invalid Google token'}, status=status.HTTP_400_BAD_REQUEST)
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_decode, force_str
+from django.core.mail import send_mail
+from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
+
 class PasswordResetRequestView(APIView):
     def post(self, request):
         email = request.data.get('email')
@@ -295,10 +306,75 @@ class PasswordResetRequestView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-from rest_framework.parsers import JSONParser, FormParser, MultiPartParser
-
 class PasswordResetConfirmView(APIView):
-    parser_classes = [JSONParser, FormParser, MultiPartParser]
+    def get(self, request, uidb64, token):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+        if user and default_token_generator.check_token(user, token):
+            html_form = """
+            <html>
+            <head>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        max-width: 400px;
+                        margin: 50px auto;
+                        padding: 20px;
+                        background-color: #f9f9f9;
+                    }
+                    h2 {
+                        text-align: center;
+                        color: #333;
+                    }
+                    .form-group {
+                        margin-bottom: 15px;
+                    }
+                    label {
+                        display: block;
+                        margin-bottom: 5px;
+                        color: #555;
+                    }
+                    input[type="text"] {
+                        width: 100%;
+                        padding: 8px;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                    }
+                    input[type="submit"] {
+                        width: 100%;
+                        padding: 10px;
+                        background-color: #007bff;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    }
+                    input[type="submit"]:hover {
+                        background-color: #0056b3;
+                    }
+                    .error {
+                        color: red;
+                        text-align: center;
+                    }
+                </style>
+            </head>
+            <body>
+                <h2>Reset Your Password</h2>
+                <form method="post" action="">
+                    <div class="form-group">
+                        <label for="new_password">New Password:</label>
+                        <input type="text" id="new_password" name="new_password" required>
+                    </div>
+                    <input type="submit" value="Submit">
+                </form>
+            </body>
+            </html>
+            """
+            return Response(html_form, content_type='text/html')
+        return Response('<html><body><h2 class="error">Invalid or expired link</h2></body></html>', content_type='text/html')
 
     def post(self, request, uidb64, token):
         try:
@@ -307,18 +383,18 @@ class PasswordResetConfirmView(APIView):
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             user = None
         if user and default_token_generator.check_token(user, token):
-            new_password = request.data.get('new_password')
+            new_password = request.POST.get('new_password')
             if not new_password:
                 return Response({'error': 'New password is required'}, status=status.HTTP_400_BAD_REQUEST)
             user.set_password(new_password)
             user.save()
             logger.info(f"Password reset successful for {user.email}")
-            return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
-        return Response({'error': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response('<html><body><h2>Password reset successfully!</h2></body></html>', content_type='text/html')
+        return Response('<html><body><h2 class="error">Invalid or expired token</h2></body></html>', content_type='text/html')
 
 class DeleteAccountView(APIView):
     permission_classes = [IsAuthenticated]
-
+    
     def delete(self, request, pk):
         if request.user.pk != pk:
             return Response({'error': 'You can only delete your own account'}, status=status.HTTP_403_FORBIDDEN)
