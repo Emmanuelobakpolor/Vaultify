@@ -62,6 +62,6 @@ urlpatterns = [
     path('private-messages/mark-seen/', PrivateMessageMarkSeenView.as_view(), name='private-message-mark-seen'),
     path('counts/', LostFoundAndAlertCountView.as_view(), name='lostfound-alerts-count'),
     
-    path('api/upload-profile-image/', UploadProfileImageView.as_view(), name='upload-profile-image'),
+    path('/upload-profile-image/', UploadProfileImageView.as_view(), name='upload-profile-image'),
 
 ]

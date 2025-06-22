@@ -50,13 +50,22 @@ class UploadProfileImageView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request, format=None):
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info("UploadProfileImageView POST called")
+        logger.info(f"Request user: {request.user}")
+        logger.info(f"Request files: {request.FILES}")
+
         file_obj = request.FILES.get('image')
         if not file_obj:
+            logger.warning("No image file provided in request")
             return Response({'error': 'No image file provided'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Save the file to default storage (e.g., media folder)
         file_path = default_storage.save(f'profile_images/{file_obj.name}', ContentFile(file_obj.read()))
         image_url = default_storage.url(file_path)
+
+        logger.info(f"Image saved at: {file_path}, URL: {image_url}")
 
         return Response({'image_url': image_url}, status=status.HTTP_200_OK)
 class PlainTextParser(BaseParser):
