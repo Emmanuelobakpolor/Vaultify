@@ -21,12 +21,13 @@ from django.conf.urls.static import static
 from django.http import HttpResponse
 
 from django.views.generic import TemplateView
+from accounts.views import UploadProfileImageView
 
 urlpatterns = [
     path('', lambda request: HttpResponse("Vaultify is alive!")),
     path('admin/', admin.site.urls),
     path('api/', include('accounts.urls')),
+    path('api/upload-profile-image/', UploadProfileImageView.as_view(), name='upload-profile-image'),
 
     # Serve Flutter app for password reset confirm route
 ]
-
