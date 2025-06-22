@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    AlertCountView, LostFoundCountView, PrivateMessageCreateView, PrivateMessageListView, SignupView, LoginView, LoginWithIdView, UserUpdateView, VerifyEmailView,
+    AlertCountView, LostFoundCountView, PrivateMessageCreateView, PrivateMessageListView, SignupView, LoginView, LoginWithIdView, UploadProfileImageView, UserUpdateView, VerifyEmailView,
     ResendVerificationEmailView, GoogleSignInView, PasswordResetRequestView,
     PasswordResetConfirmView, DeleteAccountView, LogoutView, CheckEmailVerificationView,
     AccessCodeCreateView, AccessCodeVerifyView, AccessCodeByUserListView,
@@ -61,4 +61,7 @@ urlpatterns = [
     path('private-messages/send/', PrivateMessageCreateView.as_view(), name='private-message-create'),
     path('private-messages/mark-seen/', PrivateMessageMarkSeenView.as_view(), name='private-message-mark-seen'),
     path('counts/', LostFoundAndAlertCountView.as_view(), name='lostfound-alerts-count'),
+    
+    path('api/upload-profile-image/', UploadProfileImageView.as_view(), name='upload-profile-image'),
+
 ]
