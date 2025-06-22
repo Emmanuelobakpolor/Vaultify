@@ -43,6 +43,7 @@ from rest_framework.parsers import FormParser
 
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from rest_framework.parsers import MultiPartParser, FormParser  # Add this import
 
 class UploadProfileImageView(APIView):
     permission_classes = [IsAuthenticated]
