@@ -810,11 +810,20 @@ class AccessCodeByUserListView(APIView):
     def get(self, request):
         """
         Retrieve a list of access codes created by the authenticated user.
+        Automatically deactivate expired access codes.
         """
         try:
+            now = timezone.now().astimezone(WAT)
             # Filter access codes by the authenticated user and order by creation date
             access_codes = AccessCode.objects.filter(creator=request.user).order_by('-created_at')
-            
+
+            # Deactivate expired access codes
+            expired_codes = access_codes.filter(valid_to__lt=now, is_active=True)
+            expired_codes.update(is_active=False)
+
+            # Refresh the queryset after update
+            access_codes = AccessCode.objects.filter(creator=request.user).order_by('-created_at')
+
             # Prepare response with the authenticated user's details
             user = request.user
             result = {
@@ -873,7 +882,7 @@ class VerifyAndCreditView(APIView):
                 )
             if not user_id:
                 return Response(
-                    {'error': 'user_id is required'},
+                    {'error': 'User ID is required'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -896,17 +905,24 @@ class VerifyAndCreditView(APIView):
                             {'error': f'User with id {user_id} not found'},
                             status=status.HTTP_400_BAD_REQUEST
                         )
-                    user.profile.wallet_balance += amount
-                    user.profile.save()
-                    print(f'Updated wallet balance for user {user_id}: {user.profile.wallet_balance}')
+                    # Idempotency check: prevent double crediting
+                    if not hasattr(user.profile, 'last_transaction_reference') or user.profile.last_transaction_reference != reference:
+                        user.profile.wallet_balance += amount
+                        user.profile.last_transaction_reference = reference
+                        user.profile.save()
+                        print(f'Updated wallet balance for user {user_id}: {user.profile.wallet_balance}')
+                    else:
+                        print(f'Transaction {reference} already processed for user {user_id}')
 
                     return Response(
                         {'message': 'Wallet credited successfully', 'balance': float(user.profile.wallet_balance)},
                         status=status.HTTP_200_OK
                     )
                 elif transaction_status == 'abandoned':
+                    # Log abandoned transaction for monitoring
+                    logger.warning(f'Transaction abandoned: reference={reference}, user_id={user_id}')
                     return Response(
-                        {'error': 'Transaction was abandoned and not completed'},
+                        {'error': 'Transaction was abandoned and not completed. Please try again or contact support.'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 else:
@@ -916,13 +932,13 @@ class VerifyAndCreditView(APIView):
                     )
             else:
                 return Response(
-                    {'error': 'Transaction verification failed'},
+                    {'error': 'Transaction verification failed. Please check your payment and try again.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
         except Exception as e:
-            print(f'Error in VerifyAndCreditView: {str(e)}')
+            logger.error(f'Error in VerifyAndCreditView: {str(e)}')
             return Response(
-                {'error': f'Something went wrong. Please try again: {str(e)}'},
+                {'error': f'Something went wrong. Please try again later.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 class PrivateMessageMarkSeenView(APIView):
