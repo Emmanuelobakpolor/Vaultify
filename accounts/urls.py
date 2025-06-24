@@ -63,6 +63,7 @@ urlpatterns = [
     path('private-messages/send/', PrivateMessageCreateView.as_view(), name='private-message-create'),
     path('private-messages/mark-seen/', PrivateMessageMarkSeenView.as_view(), name='private-message-mark-seen'),
     path('private-messages/<int:pk>/delete/', PrivateMessageDeleteView.as_view(), name='private-message-delete'),
+    path('private-messages/<int:pk>/', PrivateMessageDeleteView.as_view(), name='private-message-delete-alt'),
     # Profile Image Upload
     path('upload-profile-image/', UploadProfileImageView.as_view(), name='upload-profile-image'),
 ]
