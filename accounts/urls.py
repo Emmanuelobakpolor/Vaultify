@@ -12,6 +12,7 @@ from .views import (
     AlertDeleteView,
     LostFoundAndAlertCountView,
     PrivateMessageMarkSeenView,
+    PrivateMessageDeleteView,
 )
 
 urlpatterns = [
@@ -57,11 +58,11 @@ urlpatterns = [
     path('security-personnel-users/', SecurityPersonnelUsersListView.as_view(), name='security-personnel-users-list'),
     path('residence-users/count/', ResidenceUsersCountView.as_view(), name='residence-users-count'),
     path('security-personnel-users/count/', SecurityPersonnelUsersCountView.as_view(), name='security-personnel-users-count'),
+    # Private Messages
     path('private-messages/', PrivateMessageListView.as_view(), name='private-message-list'),
     path('private-messages/send/', PrivateMessageCreateView.as_view(), name='private-message-create'),
     path('private-messages/mark-seen/', PrivateMessageMarkSeenView.as_view(), name='private-message-mark-seen'),
-    path('counts/', LostFoundAndAlertCountView.as_view(), name='lostfound-alerts-count'),
-    
-    path('/upload-profile-image/', UploadProfileImageView.as_view(), name='upload-profile-image'),
-
+    path('private-messages/<int:pk>/delete/', PrivateMessageDeleteView.as_view(), name='private-message-delete'),
+    # Profile Image Upload
+    path('upload-profile-image/', UploadProfileImageView.as_view(), name='upload-profile-image'),
 ]

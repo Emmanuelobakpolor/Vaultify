@@ -245,7 +245,7 @@ class PaystackWebhookView(APIView):
 
         return JsonResponse({'status': 'ignored'}, status=200)
 
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.conf import settings
 from urllib.parse import urlencode
 
@@ -958,3 +958,14 @@ class PrivateMessageMarkSeenView(APIView):
         )
         updated_count = messages.update(seen=True)
         return Response({'marked_seen_count': updated_count}, status=status.HTTP_200_OK)
+
+class PrivateMessageDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        message = get_object_or_404(PrivateMessage, pk=pk)
+        # Only allow sender or receiver to delete the message
+        if message.sender != request.user and message.receiver != request.user:
+            return Response({'error': 'You do not have permission to delete this message.'}, status=status.HTTP_403_FORBIDDEN)
+        message.delete()
+        return Response({'message': 'Message deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
