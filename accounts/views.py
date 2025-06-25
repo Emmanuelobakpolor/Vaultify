@@ -875,6 +875,7 @@ class VerifyAndCreditView(APIView):
         try:
             reference = request.data.get('reference')
             user_id = request.data.get('user_id')
+            plan = request.data.get('plan')  # New: plan type from frontend
             if not reference:
                 return Response(
                     {'error': 'Transaction reference is required'},
@@ -883,6 +884,11 @@ class VerifyAndCreditView(APIView):
             if not user_id:
                 return Response(
                     {'error': 'User ID is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if not plan:
+                return Response(
+                    {'error': 'Plan type is required'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -898,6 +904,7 @@ class VerifyAndCreditView(APIView):
                 if transaction_status == 'success':
                     amount = Decimal(response_data['data']['amount']) / Decimal('100')
                     from django.contrib.auth.models import User
+                    from django.utils import timezone
                     try:
                         user = User.objects.get(id=user_id)
                     except User.DoesNotExist:
@@ -909,13 +916,24 @@ class VerifyAndCreditView(APIView):
                     if not hasattr(user.profile, 'last_transaction_reference') or user.profile.last_transaction_reference != reference:
                         user.profile.wallet_balance += amount
                         user.profile.last_transaction_reference = reference
+                        # Set subscription start and expiry dates based on plan
+                        now = timezone.now()
+                        user.profile.plan = plan
+                        user.profile.subscription_start_date = now
+                        if plan.lower() == 'monthly':
+                            user.profile.subscription_expiry_date = now + timezone.timedelta(days=30)
+                        elif plan.lower() == 'annual':
+                            user.profile.subscription_expiry_date = now + timezone.timedelta(days=365)
+                        else:
+                            # For free or unknown plans, set expiry 30 days from now
+                            user.profile.subscription_expiry_date = now + timezone.timedelta(days=30)
                         user.profile.save()
-                        print(f'Updated wallet balance for user {user_id}: {user.profile.wallet_balance}')
+                        print(f'Updated wallet balance and subscription for user {user_id}: {user.profile.wallet_balance}, plan: {plan}')
                     else:
                         print(f'Transaction {reference} already processed for user {user_id}')
 
                     return Response(
-                        {'message': 'Wallet credited successfully', 'balance': float(user.profile.wallet_balance)},
+                        {'message': 'Wallet credited and subscription updated successfully', 'balance': float(user.profile.wallet_balance)},
                         status=status.HTTP_200_OK
                     )
                 elif transaction_status == 'abandoned':
