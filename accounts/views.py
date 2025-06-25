@@ -65,6 +65,14 @@ class UploadProfileImageView(APIView):
         file_path = default_storage.save(f'profile_images/{file_obj.name}', ContentFile(file_obj.read()))
         image_url = default_storage.url(file_path)
 
+        # Prepend base URL to image_url if not absolute
+        base_url = get_base_url()
+        if not image_url.startswith('http'):
+            if image_url.startswith('/'):
+                image_url = base_url + image_url
+            else:
+                image_url = base_url + '/' + image_url
+
         logger.info(f"Image saved at: {file_path}, URL: {image_url}")
 
         return Response({'image_url': image_url}, status=status.HTTP_200_OK)

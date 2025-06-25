@@ -23,6 +23,7 @@ class UserProfile(models.Model):
         default=Decimal('0.00'), 
         validators=[MinValueValidator(Decimal('0.00'))]
     )
+    profile_picture = models.URLField(max_length=500, blank=True, null=True)
     email_verification_token = models.CharField(max_length=100, blank=True, null=True)
     is_email_verified = models.BooleanField(default=False)
 
