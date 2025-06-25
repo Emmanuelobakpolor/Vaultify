@@ -653,7 +653,8 @@ class AlertCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(sender=self.request.user)
+        user_estate = getattr(self.request.user.profile, 'estate', None)
+        serializer.save(sender=self.request.user, estate=user_estate)
 
 class AlertListView(generics.ListAPIView):
     serializer_class = AlertSerializer
@@ -668,23 +669,28 @@ class AlertListView(generics.ListAPIView):
         user_id_str = str(user.id)
         try:
             user_role = user.profile.role
+            user_estate = user.profile.estate
         except Exception:
             user_role = None
+            user_estate = None
 
-        if not user_id_str or not user_role:
+        if not user_id_str or not user_role or not user_estate:
             return Alert.objects.none()
 
         deleted_alert_ids = user.deleted_alerts.values_list('alert_id', flat=True)
 
         if user_role.lower() == 'security personnel':
-            # Return all alerts except those deleted by the user
-            return Alert.objects.exclude(
+            # Return all alerts in user's estate except those deleted by the user
+            return Alert.objects.filter(
+                sender__profile__estate=user_estate
+            ).exclude(
                 id__in=deleted_alert_ids
             ).order_by('-timestamp')
 
-        # For other roles, filter alerts where recipients contain user ID or user role
+        # For other roles, filter alerts where recipients contain user ID or user role and estate matches
         return Alert.objects.filter(
-            Q(recipients__contains=[user_id_str]) | Q(recipients__contains=[user_role])
+            (Q(recipients__contains=[user_id_str]) | Q(recipients__contains=[user_role])) &
+            Q(sender__profile__estate=user_estate)
         ).exclude(
             id__in=deleted_alert_ids
         ).order_by('-timestamp')
@@ -698,14 +704,21 @@ class LostFoundItemCreateView(generics.CreateAPIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def perform_create(self, serializer):
-        serializer.save(sender=self.request.user)
+        user_estate = getattr(self.request.user.profile, 'estate', None)
+        serializer.save(sender=self.request.user, estate=user_estate)
 
 class LostFoundItemListView(generics.ListAPIView):
-    queryset = LostFoundItem.objects.all().order_by('-date_reported')
     serializer_class = LostFoundItemSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter]
     search_fields = ['item_type', 'description', 'location', 'contact_info']
+
+    def get_queryset(self):
+        user = self.request.user
+        user_estate = getattr(user.profile, 'estate', None)
+        if not user_estate:
+            return LostFoundItem.objects.none()
+        return LostFoundItem.objects.filter(sender__profile__estate=user_estate).order_by('-date_reported')
 
 from rest_framework import generics
 from rest_framework.views import APIView
@@ -750,8 +763,10 @@ class ResidenceUsersListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        logger.info(f"ResidenceUsersListView accessed by user: {user.email}, is_authenticated: {user.is_authenticated}")
-        return User.objects.filter(profile__role='Residence', profile__is_email_verified=True)
+        user_estate = getattr(user.profile, 'estate', None)
+        if not user_estate:
+            return User.objects.none()
+        return User.objects.filter(profile__role='Residence', profile__is_email_verified=True, profile__estate=user_estate)
 
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -766,9 +781,20 @@ class PrivateMessageListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        from django.db.models import Q
         user = self.request.user
         other_user_id = self.request.query_params.get('user_id')
         if not other_user_id:
+            return PrivateMessage.objects.none()
+        # Get estates of both users
+        try:
+            user_estate = user.profile.estate
+            other_user = User.objects.get(id=other_user_id)
+            other_user_estate = other_user.profile.estate
+        except Exception:
+            return PrivateMessage.objects.none()
+        # Only allow messages if both users belong to the same estate
+        if user_estate != other_user_estate:
             return PrivateMessage.objects.none()
         return PrivateMessage.objects.filter(
             Q(sender=user, receiver_id=other_user_id) | Q(sender_id=other_user_id, receiver=user)
@@ -782,6 +808,14 @@ class PrivateMessageCreateView(generics.CreateAPIView):
         receiver = serializer.validated_data.get('receiver')
         if receiver is None:
             raise serializers.ValidationError({"receiver": "This field is required."})
+        # Check estate match
+        try:
+            sender_estate = self.request.user.profile.estate
+            receiver_estate = receiver.profile.estate
+        except Exception:
+            raise serializers.ValidationError({"receiver": "Invalid receiver or estate mismatch."})
+        if sender_estate != receiver_estate:
+            raise serializers.ValidationError({"receiver": "Receiver must belong to the same estate."})
         serializer.save(sender=self.request.user, receiver=receiver)
 
 class SecurityPersonnelUsersListView(generics.ListAPIView):
@@ -789,7 +823,11 @@ class SecurityPersonnelUsersListView(generics.ListAPIView):
     serializer_class = UserSerializer
 
     def get_queryset(self):
-        return User.objects.filter(profile__role='Security Personnel', profile__is_email_verified=True)
+        user = self.request.user
+        user_estate = getattr(user.profile, 'estate', None)
+        if not user_estate:
+            return User.objects.none()
+        return User.objects.filter(profile__role='Security Personnel', profile__is_email_verified=True, profile__estate=user_estate)
 
 class ResidenceUsersCountView(APIView):
     permission_classes = [IsAuthenticated]
