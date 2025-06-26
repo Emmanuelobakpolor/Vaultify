@@ -197,8 +197,9 @@ class UserUpdateView(APIView):
         serializer = UserSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            logger.info(f"User {user.email} updated, Role: {user.profile.role}")
+            logger.info(f"User {user.email} updated, Role: {user.profile.role}, Profile Picture: {user.profile.profile_picture}")
             return Response(serializer.data, status=status.HTTP_200_OK)
+        logger.error(f"User update errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class AccessCodeCreateView(generics.CreateAPIView):
