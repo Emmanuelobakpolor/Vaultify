@@ -62,8 +62,16 @@ MIDDLEWARE = [
 
 ALLOWED_HOSTS = ['vaultify.lexisdevelopmentltd.com', 'vaultify.lexisfinance.com', 'vaultify-43wm.onrender.com', '88.223.94.10', 'yourdomain.com', '127.0.0.1', ] 
 # or specify your IP
-CORS_ALLOW_ALL_ORIGINS = True  # only for development
+CORS_ALLOWED_ORIGINS = [
+    "https://vaultify-omega.vercel.app",
+]
 
+CORS_ALLOW_CREDENTIALS = True
+
+# Optional: add if needed
+CSRF_TRUSTED_ORIGINS = [
+    "https://vaultify-omega.vercel.app",
+]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
