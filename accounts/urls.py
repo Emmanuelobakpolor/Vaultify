@@ -1,8 +1,8 @@
 from django.urls import path
 from .views import (
-    AlertCountView, LostFoundCountView, PrivateMessageCreateView, PrivateMessageListView, SignupView, LoginView, LoginWithIdView, UploadProfileImageView, UserUpdateView, VerifyEmailView,
+    AccessCodeUnapprovedCountByEstateView, AccessCodeVerifiedCountByEstateView, AlertCountByEstateView, AlertCountView, LostFoundCountByEstateView, LostFoundCountView, PrivateMessageCreateView, PrivateMessageListView, ResidenceUsersCountByEstateView, SecurityPersonnelUsersCountByEstateView, SignupView, LoginView, LoginWithIdView, UploadProfileImageView, UserUpdateView, VerifyEmailView,
     ResendVerificationEmailView, GoogleSignInView, PasswordResetRequestView,
-    PasswordResetConfirmView, DeleteAccountView, LogoutView, CheckEmailVerificationView,
+    PasswordResetConfirmView, PasswordResetVerifyOTPView, DeleteAccountView, LogoutView, CheckEmailVerificationView,
     AccessCodeCreateView, AccessCodeVerifyView, AccessCodeByUserListView,
     AccessCodeDeactivateView, AccessCodeVerifiedCountView, AccessCodeUnapprovedCountView,
     VisitorCheckinListView, AlertCreateView, AlertListView, LostFoundItemCreateView,
@@ -26,6 +26,7 @@ urlpatterns = [
     path('google-signin/', GoogleSignInView.as_view(), name='google-signin'),
     path('password-reset/', PasswordResetRequestView.as_view(), name='password-reset'),
     path('password-reset/confirm/<str:uidb64>/<str:token>/', PasswordResetConfirmView.as_view(), name='password-reset-confirm'),
+    path('password-reset/verify-otp/', PasswordResetVerifyOTPView.as_view(), name='password-reset-verify-otp'),
     path('delete-account/<int:pk>/', DeleteAccountView.as_view(), name='delete-account'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('check-email-verification/', CheckEmailVerificationView.as_view(), name='check-email-verification'),
@@ -58,6 +59,12 @@ urlpatterns = [
     path('security-personnel-users/', SecurityPersonnelUsersListView.as_view(), name='security-personnel-users-list'),
     path('residence-users/count/', ResidenceUsersCountView.as_view(), name='residence-users-count'),
     path('security-personnel-users/count/', SecurityPersonnelUsersCountView.as_view(), name='security-personnel-users-count'),
+    path('alerts/count/by-estate/', AlertCountByEstateView.as_view(), name='alert-count-by-estate'),
+    path('lostfound/count/by-estate/', LostFoundCountByEstateView.as_view(), name='lostfound-count-by-estate'),
+    path('access-code/verified-count/by-estate/', AccessCodeVerifiedCountByEstateView.as_view(), name='access-code-verified-count-by-estate'),
+    path('access-code/unapproved-count/by-estate/', AccessCodeUnapprovedCountByEstateView.as_view(), name='access-code-unapproved-count-by-estate'),
+    path('residence-users/count/by-estate/', ResidenceUsersCountByEstateView.as_view(), name='residence-users-count-by-estate'),
+    path('security-personnel-users/count/by-estate/', SecurityPersonnelUsersCountByEstateView.as_view(), name='security-personnel-users-count-by-estate'),
     # Private Messages
     path('private-messages/', PrivateMessageListView.as_view(), name='private-message-list'),
     path('private-messages/send/', PrivateMessageCreateView.as_view(), name='private-message-create'),

@@ -26,6 +26,8 @@ class UserProfile(models.Model):
     profile_picture = models.URLField(max_length=500, blank=True, null=True)
     email_verification_token = models.CharField(max_length=100, blank=True, null=True)
     is_email_verified = models.BooleanField(default=False)
+    password_reset_otp = models.CharField(max_length=6, blank=True, null=True)
+    password_reset_otp_expiry = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username}'s Profile"

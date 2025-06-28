@@ -336,50 +336,66 @@ class GoogleSignInView(APIView):
         except ValueError:
             return Response({'error': 'Invalid Google token'}, status=status.HTTP_400_BAD_REQUEST)
 
+import random
+from datetime import datetime, timedelta
+from django.utils.timezone import now
+
 class PasswordResetRequestView(APIView):
     def post(self, request):
         email = request.data.get('email')
         try:
             user = User.objects.get(email=email)
-            token = default_token_generator.make_token(user)
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            # Update reset link to point to frontend HTML form page
-            reset_link = f"{get_base_url()}/reset_password_confirm/{uid}/{token}/"
+            profile = user.profile
+            # Generate 6-digit OTP
+            otp = f"{random.randint(100000, 999999)}"
+            profile.password_reset_otp = otp
+            profile.password_reset_otp_expiry = now() + timedelta(minutes=10)
+            profile.save()
+
+            # Send OTP email
             send_mail(
-                'Password Reset Request',
-                f'Click the link to reset your password: {reset_link}',
+                'Password Reset OTP',
+                f'Your password reset OTP is: {otp}. It expires in 10 minutes.',
                 settings.DEFAULT_FROM_EMAIL,
                 [user.email],
                 fail_silently=False,
             )
-            logger.info(f"Password reset email sent to {email}")
-            return Response({'message': 'Password reset email sent'}, status=status.HTTP_200_OK)
+            logger.info(f"Password reset OTP sent to {email}")
+            return Response({'message': 'Password reset OTP sent'}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-class PasswordResetConfirmView(APIView):
-    parser_classes = [PlainTextOrFormParser, PlainTextParser, JSONParser]
-    renderer_classes = [BrowsableAPIRenderer, JSONRenderer]
+class PasswordResetVerifyOTPView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        otp = request.data.get('otp')
+        new_password = request.data.get('new_password')
 
-    def post(self, request, uidb64, token):
+        if not all([email, otp, new_password]):
+            return Response({'error': 'Email, OTP, and new password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            uid = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            user = None
-        if user and default_token_generator.check_token(user, token):
-            if request.content_type in ['text/plain', 'application/x-www-form-urlencoded']:
-                # For plain text or form data, the raw body or form data is the new password
-                new_password = request.data if isinstance(request.data, str) else request.data.get('new_password')
-            else:
-                new_password = request.data.get('new_password')
-            if not new_password:
-                return Response({'error': 'New password is required'}, status=status.HTTP_400_BAD_REQUEST)
-            user.set_password(new_password)
-            user.save()
-            logger.info(f"Password reset successful for {user.email}")
-            return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
-        return Response({'error': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
+            user = User.objects.get(email=email)
+            profile = user.profile
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if profile.password_reset_otp != otp:
+            return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if profile.password_reset_otp_expiry < now():
+            return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        # Clear OTP fields
+        profile.password_reset_otp = None
+        profile.password_reset_otp_expiry = None
+        profile.save()
+
+        logger.info(f"Password reset successful for {user.email} via OTP")
+        return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
 
 class DeleteAccountView(APIView):
     permission_classes = [IsAuthenticated]
@@ -451,6 +467,70 @@ from rest_framework.permissions import IsAuthenticated
 
 WAT = pytz.timezone('Africa/Lagos')
 logger = logging.getLogger(__name__)
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+class AlertCountByEstateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        estate = request.query_params.get('estate')
+        if not estate:
+            return Response({'error': 'Estate parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        alerts_count = Alert.objects.filter(sender__profile__estate=estate).count()
+        return Response({'estate': estate, 'alerts_count': alerts_count}, status=status.HTTP_200_OK)
+
+class LostFoundCountByEstateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        estate = request.query_params.get('estate')
+        if not estate:
+            return Response({'error': 'Estate parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        lostfound_count = LostFoundItem.objects.filter(sender__profile__estate=estate).count()
+        return Response({'estate': estate, 'lostfound_count': lostfound_count}, status=status.HTTP_200_OK)
+
+class AccessCodeVerifiedCountByEstateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        estate = request.query_params.get('estate')
+        if not estate:
+            return Response({'error': 'Estate parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        verified_count = AccessCode.objects.filter(creator__profile__estate=estate, current_uses__gt=0).count()
+        return Response({'estate': estate, 'verified_count': verified_count}, status=status.HTTP_200_OK)
+
+class AccessCodeUnapprovedCountByEstateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        estate = request.query_params.get('estate')
+        if not estate:
+            return Response({'error': 'Estate parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        unapproved_count = AccessCode.objects.filter(creator__profile__estate=estate, current_uses=0).count()
+        return Response({'estate': estate, 'unapproved_count': unapproved_count}, status=status.HTTP_200_OK)
+
+class ResidenceUsersCountByEstateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        estate = request.query_params.get('estate')
+        if not estate:
+            return Response({'error': 'Estate parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        count = User.objects.filter(profile__role='Residence', profile__is_email_verified=True, profile__estate=estate).count()
+        return Response({'estate': estate, 'count': count}, status=status.HTTP_200_OK)
+
+class SecurityPersonnelUsersCountByEstateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        estate = request.query_params.get('estate')
+        if not estate:
+            return Response({'error': 'Estate parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        count = User.objects.filter(profile__role='Security Personnel', profile__is_email_verified=True, profile__estate=estate).count()
+        return Response({'estate': estate, 'count': count}, status=status.HTTP_200_OK)
 
 class LostFoundAndAlertCountView(APIView):
     permission_classes = [IsAuthenticated]
