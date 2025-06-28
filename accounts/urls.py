@@ -1,8 +1,9 @@
 from django.urls import path
+from django.contrib.auth.views import PasswordResetConfirmView
 from .views import (
     AccessCodeUnapprovedCountByEstateView, AccessCodeVerifiedCountByEstateView, AlertCountByEstateView, AlertCountView, LostFoundCountByEstateView, LostFoundCountView, PrivateMessageCreateView, PrivateMessageListView, ResidenceUsersCountByEstateView, SecurityPersonnelUsersCountByEstateView, SignupView, LoginView, LoginWithIdView, UploadProfileImageView, UserUpdateView, VerifyEmailView,
     ResendVerificationEmailView, GoogleSignInView, PasswordResetRequestView,
-    PasswordResetConfirmView, PasswordResetVerifyOTPView, DeleteAccountView, LogoutView, CheckEmailVerificationView,
+    PasswordResetVerifyOTPView, DeleteAccountView, LogoutView, CheckEmailVerificationView,
     AccessCodeCreateView, AccessCodeVerifyView, AccessCodeByUserListView,
     AccessCodeDeactivateView, AccessCodeVerifiedCountView, AccessCodeUnapprovedCountView,
     VisitorCheckinListView, AlertCreateView, AlertListView, LostFoundItemCreateView,
@@ -14,6 +15,7 @@ from .views import (
     PrivateMessageMarkSeenView,
     PrivateMessageDeleteView,
 )
+
 
 urlpatterns = [
     # Authentication
