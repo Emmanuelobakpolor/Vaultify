@@ -344,26 +344,30 @@ class PasswordResetRequestView(APIView):
     def post(self, request):
         email = request.data.get('email')
         try:
-            user = User.objects.get(email=email)
-            profile = user.profile
-            # Generate 6-digit OTP
-            otp = f"{random.randint(100000, 999999)}"
-            profile.password_reset_otp = otp
-            profile.password_reset_otp_expiry = now() + timedelta(minutes=10)
-            profile.save()
+            users = User.objects.filter(email=email)
+            if not users.exists():
+                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+            for user in users:
+                profile = user.profile
+                # Generate 6-digit OTP
+                otp = f"{random.randint(100000, 999999)}"
+                profile.password_reset_otp = otp
+                profile.password_reset_otp_expiry = now() + timedelta(minutes=10)
+                profile.save()
 
-            # Send OTP email
-            send_mail(
-                'Password Reset OTP',
-                f'Your password reset OTP is: {otp}. It expires in 10 minutes.',
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                fail_silently=False,
-            )
-            logger.info(f"Password reset OTP sent to {email}")
+                # Send OTP email
+                send_mail(
+                    'Password Reset OTP',
+                    f'Your password reset OTP is: {otp}. It expires in 10 minutes.',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
+                )
+                logger.info(f"Password reset OTP sent to {email} for user {user.id}")
             return Response({'message': 'Password reset OTP sent'}, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.error(f"Error in PasswordResetRequestView: {str(e)}")
+            return Response({'error': 'An error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class PasswordResetVerifyOTPView(APIView):
     def post(self, request):
