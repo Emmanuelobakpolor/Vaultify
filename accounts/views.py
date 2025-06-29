@@ -138,7 +138,19 @@ class SignupView(APIView):
             try:
                 send_mail(
                     'Verify Your Email',
-                    f'Click the link to verify your email: {get_base_url()}/api/verify-email/{verification_token}/',
+                    f"""Dear {user.first_name},
+
+You’re just one step away from joining your Estate on Vaultify. To complete your sign-in, please verify your email address. Here’s why it’s important:
+\t•\tAccount Protection: Verifying your email helps secure your profile and prevent unauthorized access.
+\t•\tStay Informed: Get important announcements, updates, and alerts from your estate without missing a thing.
+
+Please confirm your email by clicking the link below:
+
+Confirm Email: {get_base_url()}/api/verify-email/{verification_token}/
+
+Warm regards,
+The Vaultify Team.
+""",
                     settings.DEFAULT_FROM_EMAIL,
                     [user.email],
                     fail_silently=False,
@@ -379,7 +391,12 @@ class PasswordResetVerifyOTPView(APIView):
             return Response({'error': 'Email, OTP, and new password are required'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = User.objects.get(email=email)
+            users = User.objects.filter(email=email)
+            if not users.exists():
+                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+            if users.count() > 1:
+                logger.warning(f"Multiple users found with email {email}. Using the first user for OTP verification.")
+            user = users.first()
             profile = user.profile
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -569,9 +586,8 @@ class LostFoundCountView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
-        lostfound_count = LostFoundItem.objects.filter(sender=user).count()
-        logger.debug(f"User {user.username} has {lostfound_count} lost and found items")
+        lostfound_count = LostFoundItem.objects.count()
+        logger.debug(f"Total lost and found items count: {lostfound_count}")
         return Response({'lostfound_count': lostfound_count}, status=status.HTTP_200_OK)
 
 class AlertDeleteView(APIView):
