@@ -9,6 +9,7 @@ from .views import (
     VisitorCheckinListView, AlertCreateView, AlertListView, LostFoundItemCreateView,
     LostFoundItemListView, LostFoundItemDetailView, VerifyAndCreditView,
     ResidenceUsersListView, SecurityPersonnelUsersListView,
+    ResidenceUsersListAllView, SecurityPersonnelUsersListAllView, LostFoundItemListAllView,
     ResidenceUsersCountView, SecurityPersonnelUsersCountView,
     AlertDeleteView,
     LostFoundAndAlertCountView,
@@ -54,6 +55,9 @@ urlpatterns = [
     path('lostfound/', LostFoundItemListView.as_view(), name='lostfound-list'),
     path('lostfound/create/', LostFoundItemCreateView.as_view(), name='lostfound-create'),
     path('lostfound/<int:pk>/', LostFoundItemDetailView.as_view(), name='lostfound-detail'),
+    path('residence-users/all/', ResidenceUsersListAllView.as_view(), name='residence-users-list-all'),
+    path('security-personnel-users/all/', SecurityPersonnelUsersListAllView.as_view(), name='security-personnel-users-list-all'),
+    path('lostfound/all/', LostFoundItemListAllView.as_view(), name='lostfound-list-all'),
     # Payments
     path('verify-and-credit/', VerifyAndCreditView.as_view(), name='verify-and-credit'),
     # User role based lists and counts

@@ -829,6 +829,27 @@ class LostFoundItemListView(generics.ListAPIView):
             return LostFoundItem.objects.none()
         return LostFoundItem.objects.filter(sender__profile__estate=user_estate).order_by('-date_reported')
 
+class LostFoundItemListAllView(generics.ListAPIView):
+    serializer_class = LostFoundItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return LostFoundItem.objects.all().order_by('-date_reported')
+
+class LostFoundItemListAllView(generics.ListAPIView):
+    serializer_class = LostFoundItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return LostFoundItem.objects.all().order_by('-date_reported')
+
+class LostFoundItemListAllView(generics.ListAPIView):
+    serializer_class = LostFoundItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return LostFoundItem.objects.all().order_by('-date_reported')
+
 from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -876,6 +897,13 @@ class ResidenceUsersListView(generics.ListAPIView):
         if not user_estate:
             return User.objects.none()
         return User.objects.filter(profile__role='Residence', profile__is_email_verified=True, profile__estate=user_estate)
+
+class ResidenceUsersListAllView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        return User.objects.filter(profile__role='Residence', profile__is_email_verified=True)
 
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -937,6 +965,13 @@ class SecurityPersonnelUsersListView(generics.ListAPIView):
         if not user_estate:
             return User.objects.none()
         return User.objects.filter(profile__role='Security Personnel', profile__is_email_verified=True, profile__estate=user_estate)
+
+class SecurityPersonnelUsersListAllView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        return User.objects.filter(profile__role='Security Personnel', profile__is_email_verified=True)
 
 class ResidenceUsersCountView(APIView):
     permission_classes = [IsAuthenticated]
