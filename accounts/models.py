@@ -28,6 +28,8 @@ class UserProfile(models.Model):
     is_email_verified = models.BooleanField(default=False)
     password_reset_otp = models.CharField(max_length=6, blank=True, null=True)
     password_reset_otp_expiry = models.DateTimeField(blank=True, null=True)
+    signup_otp = models.CharField(max_length=6, blank=True, null=True)
+    signup_otp_expiry = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
