@@ -76,6 +76,129 @@ class UploadProfileImageView(APIView):
         logger.info(f"Image saved at: {file_path}, URL: {image_url}")
 
         return Response({'image_url': image_url}, status=status.HTTP_200_OK)
+
+from django.db import transaction
+from django.utils.timezone import now
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+import random
+
+OTP_LIFETIME_MINUTES = 10
+
+
+class SignupView(APIView):
+    """
+    Signup + email‑OTP verification.
+    """
+    def post(self, request):
+        email      = request.data.get('email', '').strip().lower()
+        otp        = request.data.get('otp', '').strip()
+        first_name = request.data.get('first_name', '').strip()
+        last_name  = request.data.get('last_name', '').strip()
+        password   = request.data.get('password', '').strip()
+
+        if not all([email, first_name, last_name, password]):
+            return Response(
+                {'error': 'Email, first name, last name, and password are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ----------------------------------------------------------
+        # Existing user branch
+        # ----------------------------------------------------------
+        try:
+            user = User.objects.get(email=email)
+            profile = user.profile
+
+            # Already verified?  Bail out early.
+            if profile.is_email_verified:
+                return Response(
+                    {'message': 'Email already verified. Please sign in.'},
+                    status=status.HTTP_200_OK
+                )
+
+            # --- Verify OTP ---
+            if otp:
+                if otp != profile.signup_otp:
+                    return Response(
+                        {'status': 'failure', 'message': 'Invalid OTP'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                if profile.signup_otp_expiry < now():
+                    return Response(
+                        {'status': 'failure', 'message': 'OTP expired'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                profile.is_email_verified = True
+                profile.signup_otp = None
+                profile.signup_otp_expiry = None
+                profile.save(update_fields=[
+                    'is_email_verified', 'signup_otp', 'signup_otp_expiry'
+                ])
+                return Response(
+                    {'status': 'success', 'message': 'Email verified successfully'},
+                    status=status.HTTP_200_OK
+                )
+
+            # --- Resend OTP (but don’t regenerate if still valid) ---
+            if profile.signup_otp and profile.signup_otp_expiry > now():
+                otp_code = profile.signup_otp         # reuse existing
+            else:
+                otp_code = f"{random.randint(100000, 999999)}"
+                profile.signup_otp = otp_code
+                profile.signup_otp_expiry = now() + timedelta(minutes=OTP_LIFETIME_MINUTES)
+                profile.save(update_fields=['signup_otp', 'signup_otp_expiry'])
+
+            self._send_signup_otp_email(user.first_name, user.email, otp_code)
+            return Response({'message': 'OTP sent successfully'}, status=status.HTTP_200_OK)
+
+        # ----------------------------------------------------------
+        # New user branch
+        # ----------------------------------------------------------
+        except User.DoesNotExist:
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    username=email,
+                    email=email,
+                    first_name=first_name,
+                    last_name=last_name,
+                    password=password
+                )
+                profile = user.profile
+                otp_code = f"{random.randint(100000, 999999)}"
+                profile.signup_otp = otp_code
+                profile.signup_otp_expiry = now() + timedelta(minutes=OTP_LIFETIME_MINUTES)
+                profile.save(update_fields=['signup_otp', 'signup_otp_expiry'])
+
+            self._send_signup_otp_email(first_name, email, otp_code)
+            return Response(
+                {'message': 'User created and OTP sent successfully'},
+                status=status.HTTP_201_CREATED
+            )
+
+    # ------------------------------------------------------------------
+    # Helper: send e‑mail (kept outside the main logic for clarity)
+    # ------------------------------------------------------------------
+    def _send_signup_otp_email(self, first_name, email, otp_code):
+        send_mail(
+            subject='Your Vaultify Signup OTP',
+            message=f"""Dear {first_name},
+
+You’re just one step away from joining your Estate on Vaultify. 
+To complete your sign‑in, please verify your email address using the OTP below.
+
+Your OTP is: {otp_code}
+
+This OTP expires in {OTP_LIFETIME_MINUTES} minutes.
+
+Warm regards,
+The Vaultify Team""",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
 class PlainTextParser(BaseParser):
     """
     Plain text parser for 'text/plain' content type.
