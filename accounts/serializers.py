@@ -187,6 +187,11 @@ class AlertSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Recipients must be a non-empty list")
         return value
 
+    def create(self, validated_data):
+        # Remove 'estate' if present to avoid passing it to model create
+        validated_data.pop('estate', None)
+        return Alert.objects.create(**validated_data)
+
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Alert, UserProfile, AccessCode, LostFoundItem
@@ -216,6 +221,8 @@ class LostFoundItemSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         request = self.context.get('request')
         image = request.FILES.get('image') if request and request.FILES else None
+        # Remove 'estate' if present to avoid passing it to model create
+        validated_data.pop('estate', None)
         instance = LostFoundItem.objects.create(**validated_data)
         if image:
             instance.image = image

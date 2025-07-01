@@ -1057,7 +1057,7 @@ class VerifyAndCreditView(APIView):
         try:
             reference = request.data.get('reference')
             user_id = request.data.get('user_id')
-            plan = request.data.get('plan')  # New: plan type from frontend
+            plan = request.data.get('plan')  
             if not reference:
                 return Response(
                     {'error': 'Transaction reference is required'},
