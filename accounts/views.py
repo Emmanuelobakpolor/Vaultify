@@ -104,66 +104,98 @@ def get_base_url():
 
 logger = logging.getLogger(__name__)
 
-class SignupView(APIView):
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+import random
+from datetime import timedelta
+from django.utils.timezone import now
+from django.core.mail import send_mail
+from django.conf import settings
+import logging
+import uuid
+
+logger = logging.getLogger(__name__)
+
+class SignupSendOTPView(APIView):
     def post(self, request):
-        logger.info(f"Received signup data: {request.data}")
+        email = request.data.get('email', '').strip().lower()
+        if not email:
+            return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Make a safe mutable copy of request.data
-        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        # Check if user exists
+        from django.contrib.auth.models import User
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Normalize email to lowercase
-        if 'email' in data:
-            data['email'] = data['email'].strip().lower()
+        profile = user.profile
 
-        serializer = UserSerializer(data=data, context={'request': request})
-        if serializer.is_valid():
-            user = serializer.save()
+        # Generate 6-digit OTP
+        otp = f"{random.randint(100000, 999999)}"
+        profile.signup_otp = otp
+        profile.signup_otp_expiry = now() + timedelta(minutes=10)
+        profile.save()
 
-            # Auth token
-            token, _ = AuthToken.objects.get_or_create(user=user)
+        # Send OTP email with personalized text
+        try:
+            send_mail(
+                'Your Vaultify Signup OTP',
+                f"""Dear {user.first_name},
 
-            # Update profile with all fields from request data
-            profile_data = data.get('profile', {})
-            profile = user.profile
-            for attr, value in profile_data.items():
-                setattr(profile, attr, value)
-            profile.save()
-
-            # Email verification
-            verification_token = str(uuid.uuid4())
-            profile.email_verification_token = verification_token
-            profile.save()
-
-            # Send verification email
-            try:
-                send_mail(
-                    'Verify Your Email',
-                    f"""Dear {user.first_name},
-
-You’re just one step away from joining your Estate on Vaultify. To complete your sign-in, please verify your email address. Here’s why it’s important:
+You’re just one step away from joining your Estate on Vaultify. To complete your sign-in, please verify your email address using the OTP below. Here’s why it’s important:
 \t•\tAccount Protection: Verifying your email helps secure your profile and prevent unauthorized access.
 \t•\tStay Informed: Get important announcements, updates, and alerts from your estate without missing a thing.
 
-Please confirm your email by clicking the link below:
+Your OTP is: {otp}
 
-Confirm Email: {get_base_url()}/api/verify-email/{verification_token}/
+This OTP expires in 10 minutes.
 
 Warm regards,
 The Vaultify Team.
 """,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [user.email],
-                    fail_silently=False,
-                )
-                logger.info(f"Verification email sent to {user.email}")
-            except Exception as e:
-                logger.error(f"Failed to send verification email: {e}")
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+            logger.info(f"Signup OTP sent to {user.email}")
+        except Exception as e:
+            logger.error(f"Failed to send signup OTP: {e}")
+            return Response({'error': 'Failed to send OTP'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            logger.info(f"User created: {serializer.data}, Role: {user.profile.role}, Phone: {user.profile.phone_number}")
-            return Response({'token': token.key, 'user': UserSerializer(user).data}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'OTP sent successfully'}, status=status.HTTP_200_OK)
 
-        logger.error(f"Signup errors: {serializer.errors}")
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class SignupVerifyOTPView(APIView):
+    def post(self, request):
+        email = request.data.get('email', '').strip().lower()
+        otp = request.data.get('otp', '').strip()
+
+        if not email or not otp:
+            return Response({'error': 'Email and OTP are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from django.contrib.auth.models import User
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        profile = user.profile
+
+        if profile.signup_otp != otp:
+            return Response({'status': 'failure', 'message': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if profile.signup_otp_expiry < now():
+            return Response({'status': 'failure', 'message': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Mark email as verified and clear OTP fields
+        profile.is_email_verified = True
+        profile.signup_otp = None
+        profile.signup_otp_expiry = None
+        profile.save()
+
+        logger.info(f"Email verified for user {user.email} via OTP")
+        return Response({'status': 'success', 'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
 class CheckEmailVerificationView(APIView):
     permission_classes = [IsAuthenticated]
 
