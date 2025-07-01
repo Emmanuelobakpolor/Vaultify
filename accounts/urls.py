@@ -1,7 +1,7 @@
 from django.urls import path
 from django.contrib.auth.views import PasswordResetConfirmView
 from .views import (
-    AccessCodeUnapprovedCountByEstateView, AccessCodeVerifiedCountByEstateView, AlertCountByEstateView, AlertCountView, LostFoundCountByEstateView, LostFoundCountView, PrivateMessageCreateView, PrivateMessageListView, ResidenceUsersCountByEstateView, SecurityPersonnelUsersCountByEstateView, SignupView, LoginView, LoginWithIdView, UploadProfileImageView, UserUpdateView, VerifyEmailView,
+    AccessCodeUnapprovedCountByEstateView, AccessCodeVerifiedCountByEstateView, AlertCountByEstateView, AlertCountView, LostFoundCountByEstateView, LostFoundCountView, PrivateMessageCreateView, PrivateMessageListView, ResidenceUsersCountByEstateView, SecurityPersonnelUsersCountByEstateView, SignupSendOTPView, SignupVerifyOTPView, LoginView, LoginWithIdView, UploadProfileImageView, UserUpdateView, VerifyEmailView,
     ResendVerificationEmailView, GoogleSignInView, PasswordResetRequestView,
     PasswordResetVerifyOTPView, DeleteAccountView, LogoutView, CheckEmailVerificationView,
     AccessCodeCreateView, AccessCodeVerifyView, AccessCodeByUserListView,
@@ -20,7 +20,8 @@ from .views import (
 
 urlpatterns = [
     # Authentication
-    path('signup/', SignupView.as_view(), name='signup'),
+    path('signup/send-otp/', SignupSendOTPView.as_view(), name='signup-send-otp'),
+    path('signup/verify-otp/', SignupVerifyOTPView.as_view(), name='signup-verify-otp'),
     path('login/', LoginView.as_view(), name='login'),
     path('login/<int:pk>/', LoginWithIdView.as_view(), name='login-with-id'),
     path('user/<int:pk>/', UserUpdateView.as_view(), name='user-update'),
