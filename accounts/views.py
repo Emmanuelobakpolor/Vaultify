@@ -104,66 +104,7 @@ def get_base_url():
 
 logger = logging.getLogger(__name__)
 
-class SignupView(APIView):
-    def post(self, request):
-        logger.info(f"Received signup data: {request.data}")
 
-        # Make a safe mutable copy of request.data
-        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
-
-        # Normalize email to lowercase
-        if 'email' in data:
-            data['email'] = data['email'].strip().lower()
-
-        serializer = UserSerializer(data=data, context={'request': request})
-        if serializer.is_valid():
-            user = serializer.save()
-
-            # Auth token
-            token, _ = AuthToken.objects.get_or_create(user=user)
-
-            # Update profile with all fields from request data
-            profile_data = data.get('profile', {})
-            profile = user.profile
-            for attr, value in profile_data.items():
-                setattr(profile, attr, value)
-            profile.save()
-
-            # Email verification
-            verification_token = str(uuid.uuid4())
-            profile.email_verification_token = verification_token
-            profile.save()
-
-            # Send verification email
-            try:
-                send_mail(
-                    'Verify Your Email',
-                    f"""Dear {user.first_name},
-
-You’re just one step away from joining your Estate on Vaultify. To complete your sign-in, please verify your email address. Here’s why it’s important:
-\t•\tAccount Protection: Verifying your email helps secure your profile and prevent unauthorized access.
-\t•\tStay Informed: Get important announcements, updates, and alerts from your estate without missing a thing.
-
-Please confirm your email by clicking the link below:
-
-Confirm Email: {get_base_url()}/api/verify-email/{verification_token}/
-
-Warm regards,
-The Vaultify Team.
-""",
-                    settings.DEFAULT_FROM_EMAIL,
-                    [user.email],
-                    fail_silently=False,
-                )
-                logger.info(f"Verification email sent to {user.email}")
-            except Exception as e:
-                logger.error(f"Failed to send verification email: {e}")
-
-            logger.info(f"User created: {serializer.data}, Role: {user.profile.role}, Phone: {user.profile.phone_number}")
-            return Response({'token': token.key, 'user': UserSerializer(user).data}, status=status.HTTP_201_CREATED)
-
-        logger.error(f"Signup errors: {serializer.errors}")
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class CheckEmailVerificationView(APIView):
     permission_classes = [IsAuthenticated]
 
