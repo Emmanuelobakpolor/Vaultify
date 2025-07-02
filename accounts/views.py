@@ -208,7 +208,17 @@ class SignupView(APIView):
             subject='Your Vaultify Signup OTP',
             message=f"""Dear {first_name},
 
-You’re just one step away from joining your Estate on Vaultify. 
+You’re just one step away from joining your Estate on Vaultify.
+please verify your email address. Here’s why it’s important:
+	•	Account Protection: Verifying your email helps secure your profile and prevent unauthorized access.
+	•	Stay Informed: Get important announcements, updates, and alerts from your estate without missing a thing.
+
+Input the otp below to confirm your email and get the full Vaultify experience:
+
+                   Confirm Email
+
+Warm regards,
+The Vaultify Team.
 To complete your sign‑in, please verify your email address using the OTP below.
 
 Your OTP is: {otp_code}
@@ -594,6 +604,9 @@ class PasswordResetVerifyOTPView(APIView):
 
         logger.info(f"Password reset successful for {user.email} via OTP")
         return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
+
+
+
 
 class DeleteAccountView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1346,3 +1359,23 @@ class PrivateMessageDeleteView(APIView):
             return Response({'error': 'You do not have permission to delete this message.'}, status=status.HTTP_403_FORBIDDEN)
         message.delete()
         return Response({'message': 'Message deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        current_password = request.data.get('current_password')
+        new_password = request.data.get('new_password')
+
+        if not current_password or not new_password:
+            return Response({'error': 'Current password and new password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not user.check_password(current_password):
+            return Response({'error': 'Current password is incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        # Return JSON response explicitly
+        return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
