@@ -104,9 +104,6 @@ class SignupView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # ----------------------------------------------------------
-        # Existing user branch
-        # ----------------------------------------------------------
         try:
             user = User.objects.get(email=email)
             profile = user.profile
