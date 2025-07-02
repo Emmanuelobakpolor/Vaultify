@@ -160,6 +160,14 @@ class SignupView(APIView):
         except User.DoesNotExist:
             with transaction.atomic():
                 from .serializers import UserSerializer
+                role_value = request.data.get('role', '').strip()
+                if role_value.lower() == 'security personnel':
+                    role_value = 'Security Personnel'
+                elif role_value.lower() == 'residence':
+                    role_value = 'Residence'
+                else:
+                    role_value = ''  # Invalid role will cause serializer validation error
+
                 user_data = {
                     'email': email,
                     'first_name': first_name,
@@ -167,13 +175,14 @@ class SignupView(APIView):
                     'password': password,
                     'profile': {
                         'phone_number': request.data.get('phone_number', ''),
-                        'role': request.data.get('role', ''),
+                        'role': role_value,
                         'estate': request.data.get('estate', ''),
                         'estate_email': request.data.get('estate_email', ''),
                         'house_address': request.data.get('house_address', ''),
                         'pin': request.data.get('pin', ''),
                         'plan': request.data.get('plan', ''),
                         'profile_picture': request.data.get('profile_picture', ''),
+                        'wallet_balance': 0.0,
                     }
                 }
                 serializer = UserSerializer(data=user_data)
