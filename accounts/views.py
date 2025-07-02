@@ -157,7 +157,8 @@ class SignupView(APIView):
         except User.DoesNotExist:
             with transaction.atomic():
                 from .serializers import UserSerializer
-                role_value = request.data.get('role', '').strip()
+                profile_data = request.data.get('profile', {})
+                role_value = profile_data.get('role', '').strip()
                 if role_value.lower() == 'security personnel':
                     role_value = 'Security Personnel'
                 elif role_value.lower() == 'residence':
@@ -171,14 +172,14 @@ class SignupView(APIView):
                     'last_name': last_name,
                     'password': password,
                     'profile': {
-                        'phone_number': request.data.get('phone_number', ''),
+                        'phone_number': profile_data.get('phone_number', ''),
                         'role': role_value,
-                        'estate': request.data.get('estate', ''),
-                        'estate_email': request.data.get('estate_email', ''),
-                        'house_address': request.data.get('house_address', ''),
-                        'pin': request.data.get('pin', ''),
-                        'plan': request.data.get('plan', ''),
-                        'profile_picture': request.data.get('profile_picture', ''),
+                        'estate': profile_data.get('estate', ''),
+                        'estate_email': profile_data.get('estate_email', ''),
+                        'house_address': profile_data.get('house_address', ''),
+                        'pin': profile_data.get('pin', ''),
+                        'plan': profile_data.get('plan', ''),
+                        'profile_picture': profile_data.get('profile_picture', ''),
                         'wallet_balance': 0.0,
                     }
                 }
