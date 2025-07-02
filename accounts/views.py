@@ -159,18 +159,33 @@ class SignupView(APIView):
         # ----------------------------------------------------------
         except User.DoesNotExist:
             with transaction.atomic():
-                user = User.objects.create_user(
-                    username=email,
-                    email=email,
-                    first_name=first_name,
-                    last_name=last_name,
-                    password=password
-                )
-                profile = user.profile
-                otp_code = f"{random.randint(100000, 999999)}"
-                profile.signup_otp = otp_code
-                profile.signup_otp_expiry = now() + timedelta(minutes=OTP_LIFETIME_MINUTES)
-                profile.save(update_fields=['signup_otp', 'signup_otp_expiry'])
+                from .serializers import UserSerializer
+                user_data = {
+                    'email': email,
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'password': password,
+                    'profile': {
+                        'phone_number': request.data.get('phone_number', ''),
+                        'role': request.data.get('role', ''),
+                        'estate': request.data.get('estate', ''),
+                        'estate_email': request.data.get('estate_email', ''),
+                        'house_address': request.data.get('house_address', ''),
+                        'pin': request.data.get('pin', ''),
+                        'plan': request.data.get('plan', ''),
+                        'profile_picture': request.data.get('profile_picture', ''),
+                    }
+                }
+                serializer = UserSerializer(data=user_data)
+                if serializer.is_valid():
+                    user = serializer.save()
+                    profile = user.profile
+                    otp_code = f"{random.randint(100000, 999999)}"
+                    profile.signup_otp = otp_code
+                    profile.signup_otp_expiry = now() + timedelta(minutes=OTP_LIFETIME_MINUTES)
+                    profile.save(update_fields=['signup_otp', 'signup_otp_expiry'])
+                else:
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
             self._send_signup_otp_email(first_name, email, otp_code)
             return Response(
