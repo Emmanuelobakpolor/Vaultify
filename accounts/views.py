@@ -45,6 +45,10 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from rest_framework.parsers import MultiPartParser, FormParser  # Add this import
 
+import os
+import uuid
+from django.utils.deconstruct import deconstructible
+
 class UploadProfileImageView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
@@ -61,8 +65,12 @@ class UploadProfileImageView(APIView):
             logger.warning("No image file provided in request")
             return Response({'error': 'No image file provided'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Save the file to default storage (e.g., media folder)
-        file_path = default_storage.save(f'profile_images/{file_obj.name}', ContentFile(file_obj.read()))
+        # Generate a unique filename with the original extension
+        ext = os.path.splitext(file_obj.name)[1]  # e.g. '.jpg'
+        unique_filename = f"{uuid.uuid4().hex}{ext}"
+
+        # Save the file to default storage (e.g., media folder) with unique name
+        file_path = default_storage.save(f'profile_images/{unique_filename}', ContentFile(file_obj.read()))
         image_url = default_storage.url(file_path)
 
         # Prepend base URL to image_url if not absolute
