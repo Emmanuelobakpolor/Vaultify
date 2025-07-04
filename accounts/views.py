@@ -395,16 +395,40 @@ class UserUpdateView(APIView):
         serializer = UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    from datetime import timedelta
+    from django.utils.timezone import now
+    import random
     def put(self, request, pk):
         try:
             user = User.objects.get(pk=pk)
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
         
+        old_email = user.email
         serializer = UserSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            logger.info(f"User {user.email} updated, Role: {user.profile.role}, Profile Picture: {user.profile.profile_picture}")
+            new_email = serializer.instance.email
+            logger.info(f"User {old_email} updated to {new_email}, Role: {user.profile.role}, Profile Picture: {user.profile.profile_picture}")
+
+            # If email changed, generate new OTP for email verification and send OTP email
+            if old_email != new_email:
+                otp_code = f"{random.randint(100000, 999999)}"
+                user.profile.signup_otp = otp_code
+                user.profile.signup_otp_expiry = now() + timedelta(minutes=10)
+                user.profile.is_email_verified = False
+                user.profile.save(update_fields=['signup_otp', 'signup_otp_expiry', 'is_email_verified'])
+                from django.core.mail import send_mail
+                from django.conf import settings
+                send_mail(
+                    'Verify Your New Email - OTP',
+                    f'Your OTP to verify your new email is: {otp_code}. It expires in 10 minutes.',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [new_email],
+                    fail_silently=False,
+                )
+                logger.info(f"Verification OTP email sent to {new_email} after email change")
+
             return Response(serializer.data, status=status.HTTP_200_OK)
         logger.error(f"User update errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -877,6 +901,13 @@ class AccessCodeVerifyView(APIView):
         except AccessCode.DoesNotExist:
             logger.warning(f"Access code not found: {code}")
             return Response({"error": "Invalid access code"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Estate-based restriction check
+        user_estate = getattr(request.user.profile, 'estate', None)
+        access_code_estate = getattr(access_code.creator.profile, 'estate', None)
+        if user_estate != access_code_estate:
+            logger.warning(f"User {request.user.email} from estate {user_estate} attempted to verify access code from estate {access_code_estate}")
+            return Response({"error": "You are not authorized to verify access codes from this estate."}, status=status.HTTP_403_FORBIDDEN)
 
         now = timezone.now().astimezone(WAT)
         if now < access_code.valid_from:
