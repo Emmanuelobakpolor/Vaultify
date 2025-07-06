@@ -17,6 +17,7 @@ class UserProfile(models.Model):
     plan = models.CharField(max_length=50, blank=True, null=True)
     subscription_start_date = models.DateTimeField(blank=True, null=True)
     subscription_expiry_date = models.DateTimeField(blank=True, null=True)
+    last_transaction_reference = models.CharField(max_length=255, blank=True, null=True)
     wallet_balance = models.DecimalField(
         max_digits=12, 
         decimal_places=2, 

@@ -1338,7 +1338,7 @@ class VerifyAndCreditView(APIView):
                         else:
                             # For free or unknown plans, set expiry 30 days from now
                             user.profile.subscription_expiry_date = now + timezone.timedelta(days=30)
-                        user.profile.save()
+                        user.profile.save(update_fields=['wallet_balance', 'last_transaction_reference', 'plan', 'subscription_start_date', 'subscription_expiry_date'])
                         print(f'Updated wallet balance and subscription for user {user_id}: {user.profile.wallet_balance}, plan: {plan}')
                     else:
                         print(f'Transaction {reference} already processed for user {user_id}')
