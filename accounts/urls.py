@@ -1,7 +1,8 @@
+from django import views
 from django.urls import path
 from django.contrib.auth.views import PasswordResetConfirmView
 from .views import (
-    AccessCodeUnapprovedCountByEstateView, AccessCodeVerifiedCountByEstateView, AlertCountByEstateView, AlertCountView, LostFoundCountByEstateView, LostFoundCountView, PrivateMessageCreateView, PrivateMessageListView, ResidenceUsersCountByEstateView, SecurityPersonnelUsersCountByEstateView, SignupSendOTPView, SignupVerifyOTPView, SignupView, LoginView, LoginWithIdView, UploadProfileImageView, UserUpdateView, VerifyEmailView,
+    AccessCodeUnapprovedCountByEstateView, AccessCodeVerifiedCountByEstateView, AlertCountByEstateView, AlertCountView, LostFoundCountByEstateView, LostFoundCountView, PrivateMessageCreateView, PrivateMessageListView, ResidenceUsersCountByEstateView, SecurityPersonnelUsersCountByEstateView, SignupSendOTPView, SignupVerifyOTPView, SignupView, LoginView, LoginWithIdView, UploadProfileImageView, UserTransactionListView, UserUpdateView, VerifyEmailView,
     ResendVerificationEmailView, GoogleSignInView, PasswordResetRequestView,
     PasswordResetVerifyOTPView, DeleteAccountView, LogoutView, CheckEmailVerificationView,
     AccessCodeCreateView, AccessCodeVerifyView, AccessCodeByUserListView,
@@ -83,4 +84,6 @@ urlpatterns = [
     # Profile Image Upload
     path('upload-profile-image/', UploadProfileImageView.as_view(), name='upload-profile-image'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+    path('user/<int:user_id>/transactions/', UserTransactionListView.as_view(), name='user-transactions'),
+
 ]

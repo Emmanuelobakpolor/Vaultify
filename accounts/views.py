@@ -14,8 +14,8 @@ from django.core.mail import send_mail
 from rest_framework.authtoken.models import Token as AuthToken
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from .serializers import AlertSerializer, UserSerializer, LostFoundItemSerializer
-from .models import Alert, UserProfile, LostFoundItem
+from .serializers import AlertSerializer, UserSerializer, LostFoundItemSerializer, TransactionSerializer
+from .models import Alert, UserProfile, LostFoundItem, Transaction
 from google.oauth2 import id_token
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
@@ -84,6 +84,19 @@ class UploadProfileImageView(APIView):
         logger.info(f"Image saved at: {file_path}, URL: {image_url}")
 
         return Response({'image_url': image_url}, status=status.HTTP_200_OK)
+
+class UserTransactionListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        try:
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        transactions = Transaction.objects.filter(user=user).order_by('-date')
+        serializer = TransactionSerializer(transactions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 from django.db import transaction
 from django.utils.timezone import now

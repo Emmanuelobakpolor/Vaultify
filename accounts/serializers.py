@@ -1,11 +1,17 @@
 import uuid
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Alert, PrivateMessage, UserProfile, AccessCode, LostFoundItem
+from .models import Alert, PrivateMessage, UserProfile, AccessCode, LostFoundItem, Transaction
 from django.contrib.auth.hashers import make_password
 import logging
 
 logger = logging.getLogger(__name__)
+
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ['id', 'user', 'date', 'reference', 'status', 'amount']
+        read_only_fields = ['id', 'user', 'date']
 
 
 
