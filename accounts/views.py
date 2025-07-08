@@ -1155,12 +1155,20 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Q
 
-class PrivateMessageListView(generics.ListAPIView):
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from django.db.models import Q
+from django.contrib.auth.models import User
+from .models import PrivateMessage
+from .serializers import PrivateMessageSerializer
+
+class PrivateMessageListView(generics.ListCreateAPIView):
     serializer_class = PrivateMessageSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        from django.db.models import Q
         user = self.request.user
         other_user_id = self.request.query_params.get('user_id')
         if not other_user_id:
@@ -1178,6 +1186,20 @@ class PrivateMessageListView(generics.ListAPIView):
         return PrivateMessage.objects.filter(
             Q(sender=user, receiver_id=other_user_id) | Q(sender_id=other_user_id, receiver=user)
         ).order_by('timestamp')
+
+    def perform_create(self, serializer):
+        receiver = serializer.validated_data.get('receiver')
+        if receiver is None:
+            raise serializers.ValidationError({"receiver": "This field is required."})
+        # Check estate match
+        try:
+            sender_estate = self.request.user.profile.estate
+            receiver_estate = receiver.profile.estate
+        except Exception:
+            raise serializers.ValidationError({"receiver": "Invalid receiver or estate mismatch."})
+        if sender_estate != receiver_estate:
+            raise serializers.ValidationError({"receiver": "Receiver must belong to the same estate."})
+        serializer.save(sender=self.request.user, receiver=receiver)
 
 class PrivateMessageCreateView(generics.CreateAPIView):
     serializer_class = PrivateMessageSerializer
