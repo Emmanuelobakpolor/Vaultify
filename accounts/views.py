@@ -1128,7 +1128,8 @@ class VisitorCheckinListView(generics.ListAPIView):
                     'hostName': item['creator_name'],
                     'checkInTime': item['created_at'],
                     'expectedCheckOutTime': item['valid_to'],
-                    'accessArea': item['gate']
+                    'accessArea': item['gate'],
+                    'estate': item.get('creator_profile', {}).get('estate', '')  # Add estate field here
                 } for item in serializer.data
             ]
         }
