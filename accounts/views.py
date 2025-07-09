@@ -1108,10 +1108,15 @@ class VisitorCheckinListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return AccessCode.objects.filter(current_uses__gt=0).order_by('-created_at')
+        estate = self.request.query_params.get('estate')
+        if not estate:
+            return AccessCode.objects.none()
+        return AccessCode.objects.filter(current_uses__gt=0, creator__profile__estate=estate).order_by('-created_at')
 
     def list(self, request, *args, **kwargs):
-        # Removed user role check to allow all authenticated users access
+        estate = request.query_params.get('estate')
+        if not estate:
+            return Response({'error': 'Estate parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
         queryset = self.get_queryset()
         serializer = AccessCodeSerializer(queryset, many=True)
         response_data = {
