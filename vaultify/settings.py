@@ -48,7 +48,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -57,23 +57,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    
 ]
 
 ALLOWED_HOSTS = ['vaultify.lexisdevelopmentltd.com', 'vaultify.lexisfinance.com', 'vaultify-43wm.onrender.com', '88.223.94.10', 'yourdomain.com', '127.0.0.1', ] 
 # or specify your IP
-'''
-CORS_ALLOWED_ORIGINS = [
-    "https://vaultify-omega.vercel.app",
-]
 
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
 
-# Optional: add if needed
-CSRF_TRUSTED_ORIGINS = [
-    "https://vaultify-omega.vercel.app",
-]
-'''
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
