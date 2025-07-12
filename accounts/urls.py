@@ -2,7 +2,7 @@ from django import views
 from django.urls import path
 from django.contrib.auth.views import PasswordResetConfirmView
 from .views import (
-    AccessCodeUnapprovedCountByEstateView, AccessCodeVerifiedCountByEstateView, AlertCountByEstateView, AlertCountView, LostFoundCountByEstateView, LostFoundCountView, PrivateMessageCreateView, PrivateMessageListView, ResidenceUsersCountByEstateView, SecurityPersonnelUsersCountByEstateView, SignupSendOTPView, SignupVerifyOTPView, SignupView, LoginView, LoginWithIdView, UploadProfileImageView, UserTransactionListView, UserUpdateView, VerifyEmailView,
+    AccessCodeUnapprovedCountByEstateView, AccessCodeVerifiedCountByEstateView, AlertCountByEstateView, AlertCountView, GeneralAlertListView, LostFoundCountByEstateView, LostFoundCountView, PrivateMessageCreateView, PrivateMessageListView, ResidenceUsersCountByEstateView, SecurityPersonnelUsersCountByEstateView, SignupSendOTPView, SignupVerifyOTPView, SignupView, LoginView, LoginWithIdView, UploadProfileImageView, UserTransactionListView, UserUpdateView, VerifyEmailView,
     ResendVerificationEmailView, GoogleSignInView, PasswordResetRequestView,
     PasswordResetVerifyOTPView, DeleteAccountView, LogoutView, CheckEmailVerificationView,
     AccessCodeCreateView, AccessCodeVerifyView, AccessCodeByUserListView,
@@ -62,6 +62,7 @@ urlpatterns = [
     path('residence-users/all/', ResidenceUsersListAllView.as_view(), name='residence-users-list-all'),
     path('security-personnel-users/all/', SecurityPersonnelUsersListAllView.as_view(), name='security-personnel-users-list-all'),
     path('lostfound/all/', LostFoundItemListAllView.as_view(), name='lostfound-list-all'),
+    path('alerts/all/', GeneralAlertListView.as_view(), name='general-alert-list'),
     # Payments
     path('verify-and-credit/', VerifyAndCreditView.as_view(), name='verify-and-credit'),
     # User role based lists and counts
