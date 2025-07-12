@@ -2,7 +2,7 @@ from django import views
 from django.urls import path
 from django.contrib.auth.views import PasswordResetConfirmView
 from .views import (
-    AccessCodeUnapprovedCountByEstateView, AccessCodeVerifiedCountByEstateView, AlertCountByEstateView, AlertCountView, GeneralAlertListView, LostFoundCountByEstateView, LostFoundCountView, PrivateMessageCreateView, PrivateMessageListView, ResidenceUsersCountByEstateView, SecurityPersonnelUsersCountByEstateView, SignupSendOTPView, SignupVerifyOTPView, SignupView, LoginView, LoginWithIdView, UploadProfileImageView, UserTransactionListView, UserUpdateView, VerifyEmailView,
+    AccessCodeUnapprovedCountByEstateView, AccessCodeVerifiedCountByEstateView, AlertCountByEstateView, AlertCountView, GeneralAlertListView, GeneralVisitorCheckinListView, LostFoundCountByEstateView, LostFoundCountView, PrivateMessageCreateView, PrivateMessageListView, ResidenceUsersCountByEstateView, SecurityPersonnelUsersCountByEstateView, SignupSendOTPView, SignupVerifyOTPView, SignupView, LoginView, LoginWithIdView, UploadProfileImageView, UserTransactionListView, UserUpdateView, VerifyEmailView,
     ResendVerificationEmailView, GoogleSignInView, PasswordResetRequestView,
     PasswordResetVerifyOTPView, DeleteAccountView, LogoutView, CheckEmailVerificationView,
     AccessCodeCreateView, AccessCodeVerifyView, AccessCodeByUserListView,
@@ -50,6 +50,7 @@ urlpatterns = [
     path('access-codes/by-user/', AccessCodeByUserListView.as_view(), name='access-code-by-user-list'),
     path('access-codes/<str:code>/deactivate/', AccessCodeDeactivateView.as_view(), name='access-code-deactivate'),
     path('visitor/checkin/', VisitorCheckinListView.as_view(), name='visitor-checkin-list'),
+    path('visitor/checkin/all/', GeneralVisitorCheckinListView.as_view(), name='visitor-checkin-list-all'),
     # Alerts
     path('alerts/', AlertListView.as_view(), name='alert-list'),
     path('alerts/create/', AlertCreateView.as_view(), name='alert-create'),

@@ -1147,6 +1147,37 @@ class VisitorCheckinListView(generics.ListAPIView):
             ]
         }
         return Response(response_data)
+    
+    
+
+# New GeneralVisitorCheckinListView without estate filtering
+class GeneralVisitorCheckinListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return AccessCode.objects.filter(current_uses__gt=0).order_by('-created_at')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = AccessCodeSerializer(queryset, many=True)
+        response_data = {
+            'count': queryset.count(),
+            'visitors': [
+                {
+                    'visitorName': item['visitor_name'],
+                    'accessCode': item['code'],
+                    'hostName': item['creator_name'],
+                    'checkInTime': item['created_at'],
+                    'expectedCheckOutTime': item['valid_to'],
+                    'accessArea': item['gate'],
+                    'estate': item.get('creator_profile', {}).get('estate', '')  # Add estate field here
+                } for item in serializer.data
+            ]
+        }
+        return Response(response_data)
+
+    
+
 
 class ResidenceUsersListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
