@@ -1046,6 +1046,19 @@ class AlertListView(generics.ListAPIView):
             id__in=deleted_alert_ids
         ).order_by('-timestamp')
 
+class GeneralAlertListView(generics.ListAPIView):
+    serializer_class = AlertSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['alert_type', 'urgency_level', 'recipients']
+
+    def get_queryset(self):
+        user = self.request.user
+        deleted_alert_ids = user.deleted_alerts.values_list('alert_id', flat=True)
+        return Alert.objects.exclude(
+            id__in=deleted_alert_ids
+        ).order_by('-timestamp')
+
 from rest_framework.parsers import MultiPartParser, FormParser
 
 class LostFoundItemCreateView(generics.CreateAPIView):
