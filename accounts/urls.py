@@ -17,6 +17,7 @@ from .views import (
     PrivateMessageMarkSeenView,
     PrivateMessageDeleteView,
     ChangePasswordView,
+    SubscriptionUsersListView,
 )
 
 
@@ -87,5 +88,5 @@ urlpatterns = [
     path('upload-profile-image/', UploadProfileImageView.as_view(), name='upload-profile-image'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('user/<int:user_id>/transactions/', UserTransactionListView.as_view(), name='user-transactions'),
-
+    path('subscription-users/', SubscriptionUsersListView.as_view(), name='subscription-users-list'),
 ]

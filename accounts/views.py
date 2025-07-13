@@ -14,7 +14,7 @@ from django.core.mail import send_mail
 from rest_framework.authtoken.models import Token as AuthToken
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from .serializers import AlertSerializer, UserSerializer, LostFoundItemSerializer, TransactionSerializer
+from .serializers import AlertSerializer, UserSerializer, LostFoundItemSerializer, TransactionSerializer, SubscriptionUserSerializer
 from .models import Alert, UserProfile, LostFoundItem, Transaction
 from google.oauth2 import id_token
 from django.conf import settings
@@ -48,6 +48,43 @@ from rest_framework.parsers import MultiPartParser, FormParser  # Add this impor
 import os
 import uuid
 from django.utils.deconstruct import deconstructible
+
+class SubscriptionUsersListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Query all users with their latest successful transaction
+        users = User.objects.filter(profile__is_email_verified=True).distinct()
+        subscription_users = []
+
+        for user in users:
+            latest_transaction = Transaction.objects.filter(user=user, status='success').order_by('-date').first()
+            if latest_transaction:
+                amount = latest_transaction.amount
+                payment_date = latest_transaction.date
+                if amount == 2000:
+                    subscription_type = 'monthly'
+                elif amount == 20000:
+                    subscription_type = 'annual'
+                else:
+                    subscription_type = 'free'
+            else:
+                amount = 0
+                payment_date = None
+                subscription_type = 'free'
+
+            subscription_users.append({
+                'user_id': user.id,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'payment_amount': amount,
+                'subscription_type': subscription_type,
+                'payment_date': payment_date,
+            })
+
+        serializer = SubscriptionUserSerializer(subscription_users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class UploadProfileImageView(APIView):
     permission_classes = [IsAuthenticated]

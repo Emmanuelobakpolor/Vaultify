@@ -13,8 +13,15 @@ class TransactionSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'date', 'reference', 'status', 'amount']
         read_only_fields = ['id', 'user', 'date']
 
-
-
+class SubscriptionUserSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
+    email = serializers.EmailField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    payment_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    subscription_type = serializers.CharField()
+    payment_date = serializers.DateTimeField(allow_null=True)
+    
 class AccessCodeSerializer(serializers.ModelSerializer):
     creator_name = serializers.CharField(source='creator.get_full_name', read_only=True)
 
