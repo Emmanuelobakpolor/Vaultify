@@ -58,20 +58,10 @@ class SubscriptionUsersListView(APIView):
         subscription_users = []
 
         for user in users:
-            latest_transaction = Transaction.objects.filter(user=user, status='success').order_by('-date').first()
-            if latest_transaction:
-                amount = latest_transaction.amount
-                payment_date = latest_transaction.date
-                if amount == 2000:
-                    subscription_type = 'monthly'
-                elif amount == 20000:
-                    subscription_type = 'annual'
-                else:
-                    subscription_type = 'free'
-            else:
-                amount = 0
-                payment_date = None
-                subscription_type = 'free'
+            # Use wallet_balance as payment_amount
+            amount = user.profile.wallet_balance
+            payment_date = None
+            subscription_type = user.profile.plan.lower() if user.profile.plan else 'free'
 
             subscription_users.append({
                 'user_id': user.id,
