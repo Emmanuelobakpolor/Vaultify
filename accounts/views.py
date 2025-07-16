@@ -1303,18 +1303,16 @@ class PrivateMessageCreateView(generics.CreateAPIView):
             raise serializers.ValidationError({"receiver": "Receiver must belong to the same estate."})
         serializer.save(sender=self.request.user, receiver=receiver)
 
-class ResidenceUsersListView(generics.ListAPIView):
+class SecurityPersonnelUsersListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
 
     def get_queryset(self):
-        estate = self.request.query_params.get('estate')
-        if not estate:
-            estate = getattr(self.request.user.profile, 'estate', None)
-        if not estate:
+        user = self.request.user
+        user_estate = getattr(user.profile, 'estate', None)
+        if not user_estate:
             return User.objects.none()
-        return User.objects.filter(profile__role='Residence', profile__is_email_verified=True, profile__estate=estate)
-
+        return User.objects.filter(profile__role='Security Personnel', profile__is_email_verified=True, profile__estate=user_estate)
 
 
 class SecurityPersonnelUsersListAllView(generics.ListAPIView):
@@ -1538,5 +1536,7 @@ class ChangePasswordView(APIView):
         user.set_password(new_password)
         user.save()
 
+        # Return JSON response explicitly
+        return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
         # Return JSON response explicitly
         return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
