@@ -1308,11 +1308,17 @@ class SecurityPersonnelUsersListView(generics.ListAPIView):
     serializer_class = UserSerializer
 
     def get_queryset(self):
-        user = self.request.user
-        user_estate = getattr(user.profile, 'estate', None)
-        if not user_estate:
+        estate = self.request.query_params.get('estate')
+        if not estate:
+            user = self.request.user
+            estate = getattr(user.profile, 'estate', None)
+        if not estate:
             return User.objects.none()
-        return User.objects.filter(profile__role='Security Personnel', profile__is_email_verified=True, profile__estate=user_estate)
+        return User.objects.filter(
+            profile__role='Security Personnel',  # Verify this role value
+            profile__is_email_verified=True,
+            profile__estate=estate
+        )
 
 
 class SecurityPersonnelUsersListAllView(generics.ListAPIView):
