@@ -53,12 +53,17 @@ class SubscriptionUsersListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Query all users with their latest successful transaction
-        users = User.objects.filter(profile__is_email_verified=True).distinct()
+        estate = request.query_params.get('estate')
+        if not estate:
+            # fallback to user's estate
+            estate = getattr(request.user.profile, 'estate', None)
+        if not estate:
+            return Response({'error': 'Estate parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        users = User.objects.filter(profile__is_email_verified=True, profile__estate=estate).distinct()
         subscription_users = []
 
         for user in users:
-            # Use wallet_balance as payment_amount
             amount = user.profile.wallet_balance
             payment_date = None
             subscription_type = user.profile.plan.lower() if user.profile.plan else 'free'
@@ -1105,11 +1110,12 @@ class LostFoundItemListView(generics.ListAPIView):
     search_fields = ['item_type', 'description', 'location', 'contact_info']
 
     def get_queryset(self):
-        user = self.request.user
-        user_estate = getattr(user.profile, 'estate', None)
-        if not user_estate:
+        estate = self.request.query_params.get('estate')
+        if not estate:
+            estate = getattr(self.request.user.profile, 'estate', None)
+        if not estate:
             return LostFoundItem.objects.none()
-        return LostFoundItem.objects.filter(sender__profile__estate=user_estate).order_by('-date_reported')
+        return LostFoundItem.objects.filter(sender__profile__estate=estate).order_by('-date_reported')
 
 class LostFoundItemListAllView(generics.ListAPIView):
     serializer_class = LostFoundItemSerializer
@@ -1217,6 +1223,7 @@ class ResidenceUsersListView(generics.ListAPIView):
             return User.objects.none()
         return User.objects.filter(profile__role='Residence', profile__is_email_verified=True, profile__estate=user_estate)
 
+
 class ResidenceUsersListAllView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
@@ -1296,16 +1303,19 @@ class PrivateMessageCreateView(generics.CreateAPIView):
             raise serializers.ValidationError({"receiver": "Receiver must belong to the same estate."})
         serializer.save(sender=self.request.user, receiver=receiver)
 
-class SecurityPersonnelUsersListView(generics.ListAPIView):
+class ResidenceUsersListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
 
     def get_queryset(self):
-        user = self.request.user
-        user_estate = getattr(user.profile, 'estate', None)
-        if not user_estate:
+        estate = self.request.query_params.get('estate')
+        if not estate:
+            estate = getattr(self.request.user.profile, 'estate', None)
+        if not estate:
             return User.objects.none()
-        return User.objects.filter(profile__role='Security Personnel', profile__is_email_verified=True, profile__estate=user_estate)
+        return User.objects.filter(profile__role='Residence', profile__is_email_verified=True, profile__estate=estate)
+
+
 
 class SecurityPersonnelUsersListAllView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
