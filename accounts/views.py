@@ -1050,22 +1050,29 @@ class AlertListView(generics.ListAPIView):
 
         user = self.request.user
         user_id_str = str(user.id)
-        try:
-            user_role = user.profile.role
-            user_estate = user.profile.estate
-        except Exception:
-            user_role = None
-            user_estate = None
+        estate = self.request.query_params.get('estate')
+        if not estate:
+            try:
+                estate = getattr(user.profile, 'estate', None)
+                user_role = user.profile.role
+            except Exception:
+                user_role = None
+                estate = None
+        else:
+            try:
+                user_role = user.profile.role
+            except Exception:
+                user_role = None
 
-        if not user_id_str or not user_role or not user_estate:
+        if not user_id_str or not user_role or not estate:
             return Alert.objects.none()
 
         deleted_alert_ids = user.deleted_alerts.values_list('alert_id', flat=True)
 
         if user_role.lower() == 'security personnel':
-            # Return all alerts in user's estate except those deleted by the user
+            # Return all alerts in the specified estate except those deleted by the user
             return Alert.objects.filter(
-                sender__profile__estate=user_estate
+                sender__profile__estate=estate
             ).exclude(
                 id__in=deleted_alert_ids
             ).order_by('-timestamp')
@@ -1073,10 +1080,11 @@ class AlertListView(generics.ListAPIView):
         # For other roles, filter alerts where recipients contain user ID or user role and estate matches
         return Alert.objects.filter(
             (Q(recipients__contains=[user_id_str]) | Q(recipients__contains=[user_role])) &
-            Q(sender__profile__estate=user_estate)
+            Q(sender__profile__estate=estate)
         ).exclude(
             id__in=deleted_alert_ids
         ).order_by('-timestamp')
+
 
 class GeneralAlertListView(generics.ListAPIView):
     serializer_class = AlertSerializer
@@ -1217,11 +1225,17 @@ class ResidenceUsersListView(generics.ListAPIView):
     serializer_class = UserSerializer
 
     def get_queryset(self):
-        user = self.request.user
-        user_estate = getattr(user.profile, 'estate', None)
-        if not user_estate:
+        estate = self.request.query_params.get('estate')
+        if not estate:
+            user = self.request.user
+            estate = getattr(user.profile, 'estate', None)
+        if not estate:
             return User.objects.none()
-        return User.objects.filter(profile__role='Residence', profile__is_email_verified=True, profile__estate=user_estate)
+        return User.objects.filter(
+            profile__role='Residence',
+            profile__is_email_verified=True,
+            profile__estate=estate
+        )
 
 
 class ResidenceUsersListAllView(generics.ListAPIView):
