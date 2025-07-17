@@ -54,13 +54,11 @@ class SubscriptionUsersListView(APIView):
 
     def get(self, request):
         estate = request.query_params.get('estate')
-        if not estate:
-            # fallback to user's estate
-            estate = getattr(request.user.profile, 'estate', None)
-        if not estate:
-            return Response({'error': 'Estate parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        if estate:
+            users = User.objects.filter(profile__is_email_verified=True, profile__estate=estate).distinct()
+        else:
+            users = User.objects.filter(profile__is_email_verified=True).distinct()
 
-        users = User.objects.filter(profile__is_email_verified=True, profile__estate=estate).distinct()
         subscription_users = []
 
         for user in users:
