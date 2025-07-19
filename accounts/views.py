@@ -239,13 +239,20 @@ class SignupView(APIView):
                     user = serializer.save()
                     profile = user.profile
 
-                    # Set subscription start and expiry dates after signup
+                    # Set subscription start and expiry dates based on plan after signup
                     from django.utils.timezone import now
+                    plan = profile_data.get('plan', '').lower()
                     profile.subscription_start_date = now()
-                    profile.subscription_expiry_date = now() + timedelta(days=30)
+                    if plan == 'monthly':
+                        profile.subscription_expiry_date = now() + timedelta(days=30)
+                    elif plan == 'annual':
+                        profile.subscription_expiry_date = now() + timedelta(days=365)
+                    else:
+                        # For free or unknown plans, set expiry 30 days from now
+                        profile.subscription_expiry_date = now() + timedelta(days=30)
                     profile.save(update_fields=['signup_otp', 'signup_otp_expiry', 'subscription_start_date', 'subscription_expiry_date'])
 
-                    print(f"Subscription dates set after signup: start={profile.subscription_start_date}, expiry={profile.subscription_expiry_date}")
+                    print(f"Subscription dates set after signup: start={profile.subscription_start_date}, expiry={profile.subscription_expiry_date}, plan={plan}")
 
                     otp_code = f"{random.randint(100000, 999999)}"
                     profile.signup_otp = otp_code
