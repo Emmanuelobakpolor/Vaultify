@@ -55,7 +55,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     
 ]
@@ -63,7 +62,7 @@ MIDDLEWARE = [
 ALLOWED_HOSTS = ['vaultify.lexisdevelopmentltd.com', 'vaultify.lexisfinance.com', 'vaultify-43wm.onrender.com', '88.223.94.10', 'yourdomain.com', '127.0.0.1', ] 
 # or specify your IP
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = ["https://vaultifyadmin.onrender.com"]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
