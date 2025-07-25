@@ -1,1 +1,1 @@
-this is the vaultify apps frontend
+this is the vaultify apps backend python
